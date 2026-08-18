@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"/>
-<meta name="theme-color" content="#04140f"/>
-<title>Feral Espresso Bar</title>
-<meta name="description" content="Feral Espresso Bar — a desert mirage cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks."/>
-<meta property="og:title" content="Feral Espresso Bar"/>
-<meta property="og:description" content="Feral Espresso Bar — a desert mirage cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks."/>
+<meta name="theme-color" content="#170608"/>
+<title>Jungle Hotspot</title>
+<meta name="description" content="Jungle Hotspot — a jungle canopy wildfire containment game. You're the fire warden. Douse hotspots before they jump to neighbouring ground — let the fire get away from you and the ridge is lost."/>
+<meta property="og:title" content="Jungle Hotspot"/>
+<meta property="og:description" content="Jungle Hotspot — a jungle canopy wildfire containment game. You're the fire warden. Douse hotspots before they jump to neighbouring ground — let the fire get away from you and the ridge is lost."/>
 <style>/* GameStudio premium shell — themeable via CSS variables set from each game's meta.
    No external dependencies (no web fonts, images or network) so every game is offline-ready. */
 :root{
@@ -387,115 +387,99 @@ h2{margin:0 0 16px;font-size:22px;font-weight:800}
 </script>
 <script>window.GAME = {
   meta: {
-    "title": "Feral Espresso Bar",
-    "tagline": "Don't blink.",
-    "description": "Feral Espresso Bar — a desert mirage cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks.",
-    "instructions": "You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks. Tap the ingredients / Arrow keys.",
-    "controls": "Tap the ingredients / Arrow keys",
-    "accent": "#5eead4",
-    "accent2": "#fca5a5",
-    "bg": "#04140f",
+    "title": "Jungle Hotspot",
+    "tagline": "Pure reflex.",
+    "description": "Jungle Hotspot — a jungle canopy wildfire containment game. You're the fire warden. Douse hotspots before they jump to neighbouring ground — let the fire get away from you and the ridge is lost.",
+    "instructions": "You're the fire warden. Douse hotspots before they jump to neighbouring ground — let the fire get away from you and the ridge is lost. Tap a burning tile to douse it.",
+    "controls": "Tap a burning tile to douse it",
+    "accent": "#fb7185",
+    "accent2": "#fbbf24",
+    "bg": "#170608",
     "width": 480,
     "height": 720,
     "genre": "simulation",
-    "mechanic": "cafe order assembly",
-    "theme": "desert mirage",
+    "mechanic": "wildfire containment",
+    "theme": "jungle canopy",
     "tags": [
       "simulation",
-      "barista",
+      "firewatch",
       "arcade",
-      "playful"
+      "meditative"
     ],
-    "emoji": "☕"
+    "emoji": "🔥"
   },
   create: function (engine) {
-    var P = {"ing":[{"n":"ESPRESSO","c":"#c98a5b"},{"n":"MILK","c":"#f4f1ea"},{"n":"SYRUP","c":"#5eead4"},{"n":"FOAM","c":"#fca5a5"}],"minLen":2,"maxLen":5,"time":2.915,"perItem":1.527,"penalty":0.91,"accent":"#5eead4","accent2":"#fca5a5","hazard":"#ff5d73"};
-    var build = function buildBarista(engine, P) {
+    var P = {"cols":7,"rows":8,"spread":1.592,"catch":0.154,"maxFires":14,"accent":"#fb7185","accent2":"#fbbf24","hazard":"#ff5d73"};
+    var build = function buildFirewatch(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
-  var order, step, timeLeft, t, done, flash, cupFill;
-  function btn(i) {
-    var n = P.ing.length, bw = (W - 40) / n;
-    return { x: 20 + i * bw + 4, y: H - 118, w: bw - 8, h: 92 };
+  var cells, t, spreadT, doused, cols, rows, cw, ch, ox, oy;
+  function idx(c, r) { return r * cols + c; }
+  function reset() {
+    cols = P.cols; rows = P.rows;
+    cw = Math.floor((W - 24) / cols); ch = Math.floor((H - 120) / rows);
+    var sz = Math.min(cw, ch); cw = sz; ch = sz;
+    ox = Math.floor((W - cw * cols) / 2); oy = Math.floor((H - ch * rows) / 2) + 10;
+    cells = []; for (var i = 0; i < cols * rows; i++) cells.push(0);
+    cells[idx(cols >> 1, rows >> 1)] = 1;
+    t = 0; spreadT = P.spread; doused = 0;
   }
-  function newOrder() {
-    var len = engine.randInt(P.minLen, P.maxLen), o = [];
-    for (var i = 0; i < len; i++) o.push(engine.randInt(0, P.ing.length - 1));
-    order = o; step = 0; timeLeft = P.time + len * P.perItem; cupFill = 0;
-  }
-  function reset() { t = 0; done = 0; flash = 0; newOrder(); }
   return {
     setup: reset, reset: reset,
     update: function (dt) {
-      t += dt; timeLeft -= dt; if (flash > 0) flash -= dt;
-      if (timeLeft <= 0) { S.hit(); engine.shake(18); S.over(); engine.gameOver(); return; }
-      var hit = -1;
+      t += dt;
       if (input.pointer.justDown) {
-        for (var i = 0; i < P.ing.length; i++) {
-          var r = btn(i);
-          if (input.pointer.x >= r.x && input.pointer.x <= r.x + r.w && input.pointer.y >= r.y - 10) hit = i;
-        }
+        var c = Math.floor((input.pointer.x - ox) / cw), r = Math.floor((input.pointer.y - oy) / ch);
+        if (c >= 0 && c < cols && r >= 0 && r < rows && cells[idx(c, r)] === 1) {
+          cells[idx(c, r)] = 2; doused++; engine.addScore(8); S.coin();
+          engine.particles.burst(ox + c * cw + cw / 2, oy + r * ch + ch / 2, { count: 14, color: P.accent, speed: 140, life: 0.5, gravity: -40 });
+        } else { S.blip(); }
       }
-      if (input.justPressed("left")) hit = 0;
-      if (input.justPressed("down")) hit = Math.min(1, P.ing.length - 1);
-      if (input.justPressed("right")) hit = Math.min(2, P.ing.length - 1);
-      if (input.justPressed("up")) hit = Math.min(3, P.ing.length - 1);
-      if (hit < 0) return;
-      if (hit === order[step]) {
-        step++; S.blip(); cupFill = step / order.length;
-        engine.particles.burst(btn(hit).x + btn(hit).w / 2, btn(hit).y, { count: 10, color: P.ing[hit].c, speed: 130, life: 0.4, gravity: -30 });
-        if (step >= order.length) {
-          done++; engine.addScore(20 + Math.round(Math.max(0, timeLeft) * 2)); S.coin();
-          engine.particles.burst(W / 2, H / 2 - 40, { count: 26, color: P.accent, speed: 200, life: 0.7, gravity: 60 });
-          newOrder();
+      spreadT -= dt;
+      if (spreadT <= 0) {
+        spreadT = Math.max(0.5, P.spread - t * 0.02);
+        var born = [];
+        for (var rr = 0; rr < rows; rr++) for (var cc = 0; cc < cols; cc++) {
+          if (cells[idx(cc, rr)] !== 1) continue;
+          var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+          for (var d = 0; d < 4; d++) {
+            var nc = cc + dirs[d][0], nr = rr + dirs[d][1];
+            if (nc < 0 || nc >= cols || nr < 0 || nr >= rows) continue;
+            if (cells[idx(nc, nr)] === 0 && engine.chance(P.catch)) born.push(idx(nc, nr));
+          }
         }
-      } else {
-        S.hit(); engine.shake(12); flash = 0.3; timeLeft -= P.penalty;
-        engine.particles.burst(btn(hit).x + btn(hit).w / 2, btn(hit).y, { count: 14, color: P.hazard, speed: 150, life: 0.45 });
+        for (var b = 0; b < born.length; b++) cells[born[b]] = 1;
+        if (born.length) S.tick();
+        var burning = 0;
+        for (var i = 0; i < cells.length; i++) if (cells[i] === 1) burning++;
+        if (burning === 0) { cells[engine.randInt(0, cells.length - 1)] = 1; }
+        if (burning >= P.maxFires) { S.hit(); engine.shake(22); S.over(); engine.gameOver(); return; }
       }
     },
     render: function (ctx) {
-      ctx.fillStyle = "rgba(255,255,255,.06)";
-      ctx.beginPath(); ctx.rect(24, 56, W - 48, 96); ctx.fill();
-      ctx.strokeStyle = flash > 0 ? P.hazard : "rgba(255,255,255,.18)"; ctx.lineWidth = 2; ctx.stroke();
-      ctx.fillStyle = "rgba(255,255,255,.45)"; ctx.textAlign = "left";
-      ctx.font = "600 12px system-ui, -apple-system, Segoe UI, sans-serif";
-      ctx.fillText("ORDER #" + (done + 1), 38, 78);
-      for (var i = 0; i < order.length; i++) {
-        var g = P.ing[order[i]], bx = 40 + i * 46, by = 108, on = i < step;
-        ctx.save();
-        ctx.globalAlpha = on ? 0.35 : 1; ctx.shadowColor = g.c; ctx.shadowBlur = on ? 0 : 12;
-        ctx.fillStyle = g.c; ctx.beginPath(); ctx.arc(bx, by, 15, 0, 6.283); ctx.fill();
-        ctx.restore();
-        if (on) { ctx.strokeStyle = P.accent; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bx - 7, by); ctx.lineTo(bx - 2, by + 6); ctx.lineTo(bx + 8, by - 6); ctx.stroke(); }
+      for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) {
+        var v = cells[idx(c, r)], x = ox + c * cw, y = oy + r * ch;
+        ctx.fillStyle = v === 2 ? "rgba(255,255,255,.05)" : "rgba(255,255,255,.03)";
+        ctx.beginPath(); ctx.rect(x + 2, y + 2, cw - 4, ch - 4); ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,.07)"; ctx.lineWidth = 1; ctx.stroke();
+        if (v === 1) {
+          var f = 0.7 + Math.sin(t * 9 + (c + r)) * 0.3;
+          ctx.save();
+          ctx.shadowColor = P.hazard; ctx.shadowBlur = 18 * f;
+          ctx.fillStyle = P.hazard;
+          ctx.beginPath(); ctx.arc(x + cw / 2, y + ch / 2, (Math.min(cw, ch) / 2 - 5) * f, 0, 6.283); ctx.fill();
+          ctx.fillStyle = "#ffb703";
+          ctx.beginPath(); ctx.arc(x + cw / 2, y + ch / 2, (Math.min(cw, ch) / 4) * f, 0, 6.283); ctx.fill();
+          ctx.restore();
+        } else if (v === 2) {
+          ctx.fillStyle = "rgba(110,231,255,.18)";
+          ctx.beginPath(); ctx.arc(x + cw / 2, y + ch / 2, Math.min(cw, ch) / 5, 0, 6.283); ctx.fill();
+        }
       }
-      var frac = Math.max(0, Math.min(1, timeLeft / (P.time + order.length * P.perItem)));
-      ctx.fillStyle = "rgba(255,255,255,.10)";
-      ctx.beginPath(); ctx.rect(24, 168, W - 48, 8); ctx.fill();
-      ctx.fillStyle = frac < 0.25 ? P.hazard : P.accent;
-      ctx.beginPath(); ctx.rect(24, 168, (W - 48) * frac, 8); ctx.fill();
-
-      var cupW = 96, cupH = 116, cxx = W / 2 - cupW / 2, cyy = H / 2 - 30;
-      ctx.fillStyle = "rgba(255,255,255,.05)";
-      ctx.beginPath(); ctx.rect(cxx, cyy, cupW, cupH); ctx.fill();
-      ctx.fillStyle = P.accent2; ctx.globalAlpha = 0.85;
-      ctx.beginPath(); ctx.rect(cxx + 4, cyy + cupH - 4 - (cupH - 8) * cupFill, cupW - 8, (cupH - 8) * cupFill); ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.strokeStyle = P.accent; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.rect(cxx, cyy, cupW, cupH); ctx.stroke();
-      ctx.beginPath(); ctx.arc(cxx + cupW + 14, cyy + 40, 18, -1.2, 1.2); ctx.stroke();
-
-      for (var b = 0; b < P.ing.length; b++) {
-        var r = btn(b), c = P.ing[b].c;
-        ctx.save(); ctx.shadowColor = c; ctx.shadowBlur = 14;
-        ctx.fillStyle = "rgba(255,255,255,.06)";
-        ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.fill();
-        ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
-        ctx.fillStyle = c;
-        ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + 32, 13, 0, 6.283); ctx.fill();
-        ctx.fillStyle = "rgba(255,255,255,.72)"; ctx.textAlign = "center";
-        ctx.font = "600 11px system-ui, -apple-system, Segoe UI, sans-serif";
-        ctx.fillText(P.ing[b].n, r.x + r.w / 2, r.y + 68);
-      }
+      var burning = 0;
+      for (var i = 0; i < cells.length; i++) if (cells[i] === 1) burning++;
+      ctx.fillStyle = burning > P.maxFires * 0.66 ? P.hazard : "rgba(255,255,255,.55)";
+      ctx.textAlign = "left"; ctx.font = "600 12px system-ui, -apple-system, Segoe UI, sans-serif";
+      ctx.fillText("fires " + burning + "/" + P.maxFires + "   doused " + doused, 22, 24);
     }
   };
 };

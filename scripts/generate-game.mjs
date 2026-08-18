@@ -132,13 +132,44 @@ async function main() {
 
   manifest.games = manifest.games || [];
   manifest.games.unshift(entry);
+
+  // Keep the gallery free of duplicates. With a finite archetype pool every mechanic
+  // eventually comes round again, so once a newer game of the same mechanic ships the
+  // older one is retired rather than left sitting next to it. Set GS_MAX_PER_MECHANIC
+  // to keep more than one (0 disables retirement entirely).
+  const retired = retireSupersededGames(manifest, entry);
   writeManifest(ROOT, manifest);
 
   log(`Shipped games/${slug}/  —  "${meta.title}" ${entry.emoji}  [${source}]`);
+  if (retired.length) log(`Retired superseded ${entry.mechanic} game(s): ${retired.join(", ")}`);
   ghOutput({
     created: "true", slug, title: meta.title, emoji: entry.emoji, tagline: entry.tagline,
-    genre: entry.genre, theme: brief.theme, source, branch: "game/" + slug
+    genre: entry.genre, theme: brief.theme, source, branch: "game/" + slug,
+    retired: retired.join(" ")
   });
+}
+
+// Drop older games that share the new game's mechanic, newest kept first.
+function retireSupersededGames(manifest, entry) {
+  const raw = process.env.GS_MAX_PER_MECHANIC;
+  const keep = raw === undefined || raw === "" ? 1 : Number(raw);
+  if (!Number.isFinite(keep) || keep < 1) return [];
+  const mech = String(entry.mechanic || "").toLowerCase().trim();
+  if (!mech) return [];
+
+  const same = manifest.games.filter((g) => String(g.mechanic || "").toLowerCase().trim() === mech);
+  if (same.length <= keep) return [];
+
+  const doomed = same.slice(keep).filter((g) => g.slug !== entry.slug);
+  const removed = [];
+  for (const g of doomed) {
+    try {
+      fs.rmSync(path.join(ROOT, "games", g.slug), { recursive: true, force: true });
+      removed.push(g.slug);
+    } catch (e) { console.error("[generate] could not retire", g.slug, e.message); }
+  }
+  if (removed.length) manifest.games = manifest.games.filter((g) => !removed.includes(g.slug));
+  return removed;
 }
 
 main().catch((e) => { console.error("[generate] fatal:", e); ghOutput({ created: "false" }); process.exit(1); });

@@ -82,11 +82,12 @@ jobs:
             ### ${{ steps.gen.outputs.emoji }} ${{ steps.gen.outputs.title }}
             > ${{ steps.gen.outputs.tagline }}
 
-            A fresh, self-contained micro-game — invented and built automatically this hour.
+            A fresh, self-contained micro-game — invented and built automatically.
 
             - **Genre:** ${{ steps.gen.outputs.genre }}
             - **Theme:** ${{ steps.gen.outputs.theme }}
             - **Folder:** `games/${{ steps.gen.outputs.slug }}/`
+            - **Retires:** ${{ steps.gen.outputs.retired || 'nothing — this mechanic is new to the gallery' }}
 
             It already passed an automated headless smoke test (loads, starts, takes input, runs 100+ frames with no errors).
 

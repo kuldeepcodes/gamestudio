@@ -2,6 +2,90 @@
   "updated": "2026-08-18",
   "games": [
     {
+      "id": "feral-last-order",
+      "slug": "2026-08-18-feral-last-order",
+      "title": "Feral Last Order",
+      "tagline": "Flow state, unlocked.",
+      "description": "Feral Last Order — a vaporwave sunset cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks.",
+      "genre": "simulation",
+      "mechanic": "cafe order assembly",
+      "theme": "vaporwave sunset",
+      "tags": [
+        "simulation",
+        "barista",
+        "arcade",
+        "hypnotic"
+      ],
+      "accent": "#e879f9",
+      "accent2": "#38bdf8",
+      "bg": "#0a0416",
+      "emoji": "☕",
+      "date": "2026-08-18"
+    },
+    {
+      "id": "quantum-diner-rush",
+      "slug": "2026-08-18-quantum-diner-rush",
+      "title": "Quantum Diner Rush",
+      "tagline": "Chase the high score.",
+      "description": "Quantum Diner Rush — a circuit board short-order grill timing game. You're on the grill during service. Pull each patty in its window — too early is raw, too late is burnt. Three ruined and service is over.",
+      "genre": "simulation",
+      "mechanic": "short-order grill timing",
+      "theme": "circuit board",
+      "tags": [
+        "simulation",
+        "grill",
+        "arcade",
+        "cheerful"
+      ],
+      "accent": "#6ee7ff",
+      "accent2": "#a78bfa",
+      "bg": "#070b1a",
+      "emoji": "🍔",
+      "date": "2026-08-18"
+    },
+    {
+      "id": "jungle-hotspot",
+      "slug": "2026-08-18-jungle-hotspot",
+      "title": "Jungle Hotspot",
+      "tagline": "Pure reflex.",
+      "description": "Jungle Hotspot — a jungle canopy wildfire containment game. You're the fire warden. Douse hotspots before they jump to neighbouring ground — let the fire get away from you and the ridge is lost.",
+      "genre": "simulation",
+      "mechanic": "wildfire containment",
+      "theme": "jungle canopy",
+      "tags": [
+        "simulation",
+        "firewatch",
+        "arcade",
+        "meditative"
+      ],
+      "accent": "#fb7185",
+      "accent2": "#fbbf24",
+      "bg": "#170608",
+      "emoji": "🔥",
+      "date": "2026-08-18"
+    },
+    {
+      "id": "wild-load-balance",
+      "slug": "2026-08-18-wild-load-balance",
+      "title": "Wild Load Balance",
+      "tagline": "Simple. Ruthless.",
+      "description": "Wild Load Balance — a volcanic forge power grid balancing game. You're running the control room. Track demand with your generation — drift outside the tolerance band and the grid destabilises into a blackout.",
+      "genre": "simulation",
+      "mechanic": "power grid balancing",
+      "theme": "volcanic forge",
+      "tags": [
+        "simulation",
+        "powergrid",
+        "arcade",
+        "frantic"
+      ],
+      "accent": "#93c5fd",
+      "accent2": "#f0abfc",
+      "bg": "#060814",
+      "emoji": "⚡",
+      "date": "2026-08-18"
+    },
+    {
       "id": "electric-night-shift",
       "slug": "2026-08-18-electric-night-shift",
       "title": "Electric Night Shift",
@@ -167,48 +251,6 @@
       "accent2": "#b388ff",
       "bg": "#05070f",
       "emoji": "♻️",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "feral-espresso-bar",
-      "slug": "2026-08-18-feral-espresso-bar",
-      "title": "Feral Espresso Bar",
-      "tagline": "Don't blink.",
-      "description": "Feral Espresso Bar — a desert mirage cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks.",
-      "genre": "simulation",
-      "mechanic": "cafe order assembly",
-      "theme": "desert mirage",
-      "tags": [
-        "simulation",
-        "barista",
-        "arcade",
-        "playful"
-      ],
-      "accent": "#5eead4",
-      "accent2": "#fca5a5",
-      "bg": "#04140f",
-      "emoji": "☕",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "midnight-lift-duty",
-      "slug": "2026-08-18-midnight-lift-duty",
-      "title": "Midnight Lift Duty",
-      "tagline": "Simple. Ruthless.",
-      "description": "Midnight Lift Duty — a molten lava elevator dispatch game. You're the lift operator in a busy tower. Collect waiting people and drop them at their floor before anyone's patience runs out.",
-      "genre": "simulation",
-      "mechanic": "elevator dispatch",
-      "theme": "molten lava",
-      "tags": [
-        "simulation",
-        "elevator",
-        "arcade",
-        "frantic"
-      ],
-      "accent": "#f9a8d4",
-      "accent2": "#c084fc",
-      "bg": "#160a1e",
-      "emoji": "🛗",
       "date": "2026-08-18"
     },
     {

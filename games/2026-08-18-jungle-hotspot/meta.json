@@ -1,0 +1,28 @@
+{
+  "id": "jungle-hotspot",
+  "slug": "2026-08-18-jungle-hotspot",
+  "title": "Jungle Hotspot",
+  "tagline": "Pure reflex.",
+  "description": "Jungle Hotspot — a jungle canopy wildfire containment game. You're the fire warden. Douse hotspots before they jump to neighbouring ground — let the fire get away from you and the ridge is lost.",
+  "genre": "simulation",
+  "mechanic": "wildfire containment",
+  "theme": "jungle canopy",
+  "tags": [
+    "simulation",
+    "firewatch",
+    "arcade",
+    "meditative"
+  ],
+  "accent": "#fb7185",
+  "accent2": "#fbbf24",
+  "bg": "#170608",
+  "emoji": "🔥",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "flappy-style hop",
+    "theme": "jungle canopy",
+    "twist": "light fades and you must relight it",
+    "mood": "meditative"
+  }
+}

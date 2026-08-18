@@ -1,28 +1,28 @@
 window.GAME = {
   meta: {
-    "title": "Feral Espresso Bar",
-    "tagline": "Don't blink.",
-    "description": "Feral Espresso Bar — a desert mirage cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks.",
+    "title": "Feral Last Order",
+    "tagline": "Flow state, unlocked.",
+    "description": "Feral Last Order — a vaporwave sunset cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks.",
     "instructions": "You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks. Tap the ingredients / Arrow keys.",
     "controls": "Tap the ingredients / Arrow keys",
-    "accent": "#5eead4",
-    "accent2": "#fca5a5",
-    "bg": "#04140f",
+    "accent": "#e879f9",
+    "accent2": "#38bdf8",
+    "bg": "#0a0416",
     "width": 480,
     "height": 720,
     "genre": "simulation",
     "mechanic": "cafe order assembly",
-    "theme": "desert mirage",
+    "theme": "vaporwave sunset",
     "tags": [
       "simulation",
       "barista",
       "arcade",
-      "playful"
+      "hypnotic"
     ],
     "emoji": "☕"
   },
   create: function (engine) {
-    var P = {"ing":[{"n":"ESPRESSO","c":"#c98a5b"},{"n":"MILK","c":"#f4f1ea"},{"n":"SYRUP","c":"#5eead4"},{"n":"FOAM","c":"#fca5a5"}],"minLen":2,"maxLen":5,"time":2.915,"perItem":1.527,"penalty":0.91,"accent":"#5eead4","accent2":"#fca5a5","hazard":"#ff5d73"};
+    var P = {"ing":[{"n":"ESPRESSO","c":"#c98a5b"},{"n":"MILK","c":"#f4f1ea"},{"n":"SYRUP","c":"#e879f9"},{"n":"FOAM","c":"#38bdf8"}],"minLen":2,"maxLen":5,"time":3.717,"perItem":1.41,"penalty":0.907,"accent":"#e879f9","accent2":"#38bdf8","hazard":"#ff5d73"};
     var build = function buildBarista(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
   var order, step, timeLeft, t, done, flash, cupFill;

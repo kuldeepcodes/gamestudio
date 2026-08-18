@@ -1,0 +1,28 @@
+{
+  "id": "wild-load-balance",
+  "slug": "2026-08-18-wild-load-balance",
+  "title": "Wild Load Balance",
+  "tagline": "Simple. Ruthless.",
+  "description": "Wild Load Balance — a volcanic forge power grid balancing game. You're running the control room. Track demand with your generation — drift outside the tolerance band and the grid destabilises into a blackout.",
+  "genre": "simulation",
+  "mechanic": "power grid balancing",
+  "theme": "volcanic forge",
+  "tags": [
+    "simulation",
+    "powergrid",
+    "arcade",
+    "frantic"
+  ],
+  "accent": "#93c5fd",
+  "accent2": "#f0abfc",
+  "bg": "#060814",
+  "emoji": "⚡",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "rhythm timing",
+    "theme": "volcanic forge",
+    "twist": "color must match to be safe",
+    "mood": "frantic"
+  }
+}

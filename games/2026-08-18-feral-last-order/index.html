@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"/>
-<meta name="theme-color" content="#160a1e"/>
-<title>Midnight Lift Duty</title>
-<meta name="description" content="Midnight Lift Duty — a molten lava elevator dispatch game. You're the lift operator in a busy tower. Collect waiting people and drop them at their floor before anyone's patience runs out."/>
-<meta property="og:title" content="Midnight Lift Duty"/>
-<meta property="og:description" content="Midnight Lift Duty — a molten lava elevator dispatch game. You're the lift operator in a busy tower. Collect waiting people and drop them at their floor before anyone's patience runs out."/>
+<meta name="theme-color" content="#0a0416"/>
+<title>Feral Last Order</title>
+<meta name="description" content="Feral Last Order — a vaporwave sunset cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks."/>
+<meta property="og:title" content="Feral Last Order"/>
+<meta property="og:description" content="Feral Last Order — a vaporwave sunset cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks."/>
 <style>/* GameStudio premium shell — themeable via CSS variables set from each game's meta.
    No external dependencies (no web fonts, images or network) so every game is offline-ready. */
 :root{
@@ -387,124 +387,115 @@ h2{margin:0 0 16px;font-size:22px;font-weight:800}
 </script>
 <script>window.GAME = {
   meta: {
-    "title": "Midnight Lift Duty",
-    "tagline": "Simple. Ruthless.",
-    "description": "Midnight Lift Duty — a molten lava elevator dispatch game. You're the lift operator in a busy tower. Collect waiting people and drop them at their floor before anyone's patience runs out.",
-    "instructions": "You're the lift operator in a busy tower. Collect waiting people and drop them at their floor before anyone's patience runs out. Up/Down arrows, swipe, or tap above/below the car.",
-    "controls": "Up/Down arrows, swipe, or tap above/below the car",
-    "accent": "#f9a8d4",
-    "accent2": "#c084fc",
-    "bg": "#160a1e",
+    "title": "Feral Last Order",
+    "tagline": "Flow state, unlocked.",
+    "description": "Feral Last Order — a vaporwave sunset cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks.",
+    "instructions": "You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks. Tap the ingredients / Arrow keys.",
+    "controls": "Tap the ingredients / Arrow keys",
+    "accent": "#e879f9",
+    "accent2": "#38bdf8",
+    "bg": "#0a0416",
     "width": 480,
     "height": 720,
     "genre": "simulation",
-    "mechanic": "elevator dispatch",
-    "theme": "molten lava",
+    "mechanic": "cafe order assembly",
+    "theme": "vaporwave sunset",
     "tags": [
       "simulation",
-      "elevator",
+      "barista",
       "arcade",
-      "frantic"
+      "hypnotic"
     ],
-    "emoji": "🛗"
+    "emoji": "☕"
   },
   create: function (engine) {
-    var P = {"floors":5,"carSpeed":7.725,"capacity":3,"patience":11.9,"spawn":2.618,"maxWaiting":6,"shaftW":74,"accent":"#f9a8d4","accent2":"#c084fc","hazard":"#ff5d73"};
-    var build = function buildElevator(engine, P) {
+    var P = {"ing":[{"n":"ESPRESSO","c":"#c98a5b"},{"n":"MILK","c":"#f4f1ea"},{"n":"SYRUP","c":"#e879f9"},{"n":"FOAM","c":"#38bdf8"}],"minLen":2,"maxLen":5,"time":3.717,"perItem":1.41,"penalty":0.907,"accent":"#e879f9","accent2":"#38bdf8","hazard":"#ff5d73"};
+    var build = function buildBarista(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
-  var car, waiting, riders, t, spawnT, served, doorT;
-  var top = 70, bot = H - 40;
-  function floorY(i) { return bot - (i + 0.5) * ((bot - top) / P.floors); }
-  function reset() {
-    car = { f: 0, y: floorY(0), moving: 0 }; waiting = []; riders = []; t = 0; spawnT = 0.8; served = 0; doorT = 0;
-    for (var i = 0; i < 2; i++) addRider();
+  var order, step, timeLeft, t, done, flash, cupFill;
+  function btn(i) {
+    var n = P.ing.length, bw = (W - 40) / n;
+    return { x: 20 + i * bw + 4, y: H - 118, w: bw - 8, h: 92 };
   }
-  function addRider() {
-    var f = engine.randInt(0, P.floors - 1), d = engine.randInt(0, P.floors - 1);
-    if (d === f) d = (f + 1) % P.floors;
-    waiting.push({ f: f, dest: d, pat: P.patience, max: P.patience });
+  function newOrder() {
+    var len = engine.randInt(P.minLen, P.maxLen), o = [];
+    for (var i = 0; i < len; i++) o.push(engine.randInt(0, P.ing.length - 1));
+    order = o; step = 0; timeLeft = P.time + len * P.perItem; cupFill = 0;
   }
+  function reset() { t = 0; done = 0; flash = 0; newOrder(); }
   return {
     setup: reset, reset: reset,
     update: function (dt) {
-      t += dt;
-      var d = input.dir(), want = car.f;
-      if (input.justPressed("up") || d.y < 0) want = car.f + 1;
-      if (input.justPressed("down") || d.y > 0) want = car.f - 1;
-      var sw = input.consumeSwipe();
-      if (sw === "up") want = car.f + 1; else if (sw === "down") want = car.f - 1;
-      if (input.pointer.justDown) { want = car.f + (input.pointer.y < car.y - 18 ? 1 : (input.pointer.y > car.y + 18 ? -1 : 0)); }
-      want = Math.round(engine.clamp(want, 0, P.floors - 1));
-      if (want !== car.f && doorT <= 0) { car.f = want; S.blip(); }
-
-      var ty = floorY(car.f);
-      car.y += (ty - car.y) * Math.min(1, dt * P.carSpeed);
-      var atFloor = Math.abs(car.y - ty) < 4;
-
-      if (atFloor) {
-        for (var r = riders.length - 1; r >= 0; r--) {
-          if (riders[r].dest === car.f) {
-            riders.splice(r, 1); served++; engine.addScore(15); S.coin(); doorT = 0.25;
-            engine.particles.burst(W / 2, car.y, { count: 14, color: P.accent, speed: 150, life: 0.5, gravity: 40 });
-          }
-        }
-        for (var w = waiting.length - 1; w >= 0; w--) {
-          if (waiting[w].f === car.f && riders.length < P.capacity) {
-            riders.push({ dest: waiting[w].dest }); waiting.splice(w, 1); S.power(); doorT = 0.25;
-          }
+      t += dt; timeLeft -= dt; if (flash > 0) flash -= dt;
+      if (timeLeft <= 0) { S.hit(); engine.shake(18); S.over(); engine.gameOver(); return; }
+      var hit = -1;
+      if (input.pointer.justDown) {
+        for (var i = 0; i < P.ing.length; i++) {
+          var r = btn(i);
+          if (input.pointer.x >= r.x && input.pointer.x <= r.x + r.w && input.pointer.y >= r.y - 10) hit = i;
         }
       }
-      if (doorT > 0) doorT -= dt;
-
-      for (var i = waiting.length - 1; i >= 0; i--) {
-        waiting[i].pat -= dt;
-        if (waiting[i].pat <= 0) { S.hit(); engine.shake(16); engine.particles.burst(40, floorY(waiting[i].f), { count: 18, color: P.hazard, speed: 160, life: 0.6 }); S.over(); engine.gameOver(); return; }
+      if (input.justPressed("left")) hit = 0;
+      if (input.justPressed("down")) hit = Math.min(1, P.ing.length - 1);
+      if (input.justPressed("right")) hit = Math.min(2, P.ing.length - 1);
+      if (input.justPressed("up")) hit = Math.min(3, P.ing.length - 1);
+      if (hit < 0) return;
+      if (hit === order[step]) {
+        step++; S.blip(); cupFill = step / order.length;
+        engine.particles.burst(btn(hit).x + btn(hit).w / 2, btn(hit).y, { count: 10, color: P.ing[hit].c, speed: 130, life: 0.4, gravity: -30 });
+        if (step >= order.length) {
+          done++; engine.addScore(20 + Math.round(Math.max(0, timeLeft) * 2)); S.coin();
+          engine.particles.burst(W / 2, H / 2 - 40, { count: 26, color: P.accent, speed: 200, life: 0.7, gravity: 60 });
+          newOrder();
+        }
+      } else {
+        S.hit(); engine.shake(12); flash = 0.3; timeLeft -= P.penalty;
+        engine.particles.burst(btn(hit).x + btn(hit).w / 2, btn(hit).y, { count: 14, color: P.hazard, speed: 150, life: 0.45 });
       }
-      spawnT -= dt;
-      if (spawnT <= 0 && waiting.length < P.maxWaiting) { addRider(); spawnT = Math.max(0.9, P.spawn - t * 0.02); }
     },
     render: function (ctx) {
-      var shaftX = W / 2 - P.shaftW / 2;
-      for (var f = 0; f < P.floors; f++) {
-        var y = floorY(f);
-        ctx.strokeStyle = "rgba(255,255,255,.10)"; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(24, y + 26); ctx.lineTo(W - 24, y + 26); ctx.stroke();
-        ctx.fillStyle = "rgba(255,255,255,.30)"; ctx.textAlign = "left";
-        ctx.font = "600 12px system-ui, -apple-system, Segoe UI, sans-serif";
-        ctx.fillText("L" + (f + 1), 26, y + 4);
-      }
-      ctx.fillStyle = "rgba(255,255,255,.05)";
-      ctx.beginPath(); ctx.rect(shaftX, top - 30, P.shaftW, bot - top + 40); ctx.fill();
-
-      for (var i = 0; i < waiting.length; i++) {
-        var p = waiting[i], py = floorY(p.f), px = shaftX - 30 - (i % 3) * 20;
-        var frac = Math.max(0, p.pat / p.max);
-        ctx.fillStyle = frac < 0.3 ? P.hazard : P.accent2;
-        ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
-        ctx.beginPath(); ctx.arc(px, py, 9, 0, 6.283); ctx.fill(); ctx.shadowBlur = 0;
-        ctx.strokeStyle = frac < 0.3 ? P.hazard : P.accent; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(px, py, 14, -1.5708, -1.5708 + 6.283 * frac); ctx.stroke();
-        ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.textAlign = "center";
-        ctx.font = "bold 10px system-ui, -apple-system, Segoe UI, sans-serif";
-        ctx.fillText(String(p.dest + 1), px, py + 3);
-      }
-      ctx.save();
-      ctx.shadowColor = P.accent; ctx.shadowBlur = 18;
-      ctx.fillStyle = "rgba(255,255,255,.12)";
-      ctx.beginPath(); ctx.rect(shaftX + 4, car.y - 26, P.shaftW - 8, 52); ctx.fill();
-      ctx.strokeStyle = P.accent; ctx.lineWidth = 3; ctx.stroke();
-      ctx.restore();
-      var gap = doorT > 0 ? (P.shaftW - 8) / 2 - 4 : 2;
-      ctx.fillStyle = "rgba(255,255,255,.22)";
-      ctx.beginPath(); ctx.rect(shaftX + 4, car.y - 26, gap, 52); ctx.fill();
-      ctx.beginPath(); ctx.rect(shaftX + P.shaftW - 4 - gap, car.y - 26, gap, 52); ctx.fill();
-      for (var r = 0; r < riders.length; r++) {
-        ctx.fillStyle = P.accent2;
-        ctx.beginPath(); ctx.arc(shaftX + 16 + r * 16, car.y + 4, 6, 0, 6.283); ctx.fill();
-      }
-      ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.textAlign = "right";
+      ctx.fillStyle = "rgba(255,255,255,.06)";
+      ctx.beginPath(); ctx.rect(24, 56, W - 48, 96); ctx.fill();
+      ctx.strokeStyle = flash > 0 ? P.hazard : "rgba(255,255,255,.18)"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,.45)"; ctx.textAlign = "left";
       ctx.font = "600 12px system-ui, -apple-system, Segoe UI, sans-serif";
-      ctx.fillText("delivered " + served, W - 24, 22);
+      ctx.fillText("ORDER #" + (done + 1), 38, 78);
+      for (var i = 0; i < order.length; i++) {
+        var g = P.ing[order[i]], bx = 40 + i * 46, by = 108, on = i < step;
+        ctx.save();
+        ctx.globalAlpha = on ? 0.35 : 1; ctx.shadowColor = g.c; ctx.shadowBlur = on ? 0 : 12;
+        ctx.fillStyle = g.c; ctx.beginPath(); ctx.arc(bx, by, 15, 0, 6.283); ctx.fill();
+        ctx.restore();
+        if (on) { ctx.strokeStyle = P.accent; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bx - 7, by); ctx.lineTo(bx - 2, by + 6); ctx.lineTo(bx + 8, by - 6); ctx.stroke(); }
+      }
+      var frac = Math.max(0, Math.min(1, timeLeft / (P.time + order.length * P.perItem)));
+      ctx.fillStyle = "rgba(255,255,255,.10)";
+      ctx.beginPath(); ctx.rect(24, 168, W - 48, 8); ctx.fill();
+      ctx.fillStyle = frac < 0.25 ? P.hazard : P.accent;
+      ctx.beginPath(); ctx.rect(24, 168, (W - 48) * frac, 8); ctx.fill();
+
+      var cupW = 96, cupH = 116, cxx = W / 2 - cupW / 2, cyy = H / 2 - 30;
+      ctx.fillStyle = "rgba(255,255,255,.05)";
+      ctx.beginPath(); ctx.rect(cxx, cyy, cupW, cupH); ctx.fill();
+      ctx.fillStyle = P.accent2; ctx.globalAlpha = 0.85;
+      ctx.beginPath(); ctx.rect(cxx + 4, cyy + cupH - 4 - (cupH - 8) * cupFill, cupW - 8, (cupH - 8) * cupFill); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = P.accent; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.rect(cxx, cyy, cupW, cupH); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cxx + cupW + 14, cyy + 40, 18, -1.2, 1.2); ctx.stroke();
+
+      for (var b = 0; b < P.ing.length; b++) {
+        var r = btn(b), c = P.ing[b].c;
+        ctx.save(); ctx.shadowColor = c; ctx.shadowBlur = 14;
+        ctx.fillStyle = "rgba(255,255,255,.06)";
+        ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.fill();
+        ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+        ctx.fillStyle = c;
+        ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + 32, 13, 0, 6.283); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,.72)"; ctx.textAlign = "center";
+        ctx.font = "600 11px system-ui, -apple-system, Segoe UI, sans-serif";
+        ctx.fillText(P.ing[b].n, r.x + r.w / 2, r.y + 68);
+      }
     }
   };
 };

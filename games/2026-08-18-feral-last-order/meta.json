@@ -1,0 +1,28 @@
+{
+  "id": "feral-last-order",
+  "slug": "2026-08-18-feral-last-order",
+  "title": "Feral Last Order",
+  "tagline": "Flow state, unlocked.",
+  "description": "Feral Last Order — a vaporwave sunset cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks.",
+  "genre": "simulation",
+  "mechanic": "cafe order assembly",
+  "theme": "vaporwave sunset",
+  "tags": [
+    "simulation",
+    "barista",
+    "arcade",
+    "hypnotic"
+  ],
+  "accent": "#e879f9",
+  "accent2": "#38bdf8",
+  "bg": "#0a0416",
+  "emoji": "☕",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "tile flipping",
+    "theme": "vaporwave sunset",
+    "twist": "the screen slowly rotates",
+    "mood": "hypnotic"
+  }
+}
