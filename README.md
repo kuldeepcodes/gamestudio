@@ -67,6 +67,27 @@ scripts/                generate-game.mjs (orchestrator), build-game.mjs, lib/ (
 AGENTS.md               Full generation contract (read this to contribute/tune)
 ```
 
+## Is there a build step? (and why, for static pages)
+
+**Nothing is built at deploy time.** The site is plain static files. Pages is set to *deploy from a
+branch*, so GitHub's own `pages-build-deployment` job — a synthetic workflow, not a file in this
+repo — just copies `main` to the CDN when you merge. The only workflow here is
+`.github/workflows/hourly-game.yml`, which generates a game and opens a PR; it never touches Pages.
+
+`scripts/build-game.mjs` is **not** a bundler, minifier or transpiler. It is string substitution that
+runs once, when a game is created, inlining `engine.js` + `shell.html` + `shell.css` + that game's
+`game.js` into a single `index.html`. The committed `index.html` *is* the final artifact.
+
+That inlining is deliberate: every game must be **one self-contained file** that runs offline, from
+`file://`, and can be copied anywhere on its own. The cost is that the ~22 KB engine is duplicated
+into each page, and an edit under `engine/` does not reach already-published games until they are
+rebuilt — so the generation workflow re-runs `scripts/rebuild-all.mjs` on every drop. That rebuild is
+byte-stable, so it produces no diff unless `engine/` genuinely changed.
+
+If you would rather have a smaller site and instant engine updates, point each game at
+`../../engine/engine.js` and `../../engine/shell.css` instead — you trade the single-file property
+for roughly an 80% smaller `games/` tree and shared browser caching.
+
 ## Run it yourself
 
 **Trigger a game now:** Actions → *Game drop* → **Run workflow** (optionally pass a

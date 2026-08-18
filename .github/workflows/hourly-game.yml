@@ -62,6 +62,14 @@ jobs:
           GS_LLM_ENDPOINT: ${{ secrets.GS_LLM_ENDPOINT }}
         run: node scripts/generate-game.mjs
 
+      # The engine and shell are inlined into each game at build time, so a game
+      # generated before an engine change but merged after it keeps the old shell.
+      # Rebuilding here is byte-stable (no diff unless engine/ actually changed), so
+      # a drop quietly brings any stale page back in line instead of it going unnoticed.
+      - name: Refresh games against the current engine
+        if: steps.gen.outputs.created == 'true'
+        run: node scripts/rebuild-all.mjs
+
       - name: Open pull request
         if: steps.gen.outputs.created == 'true'
         uses: peter-evans/create-pull-request@v6
