@@ -33,6 +33,15 @@ games — no API key, no network. (GitHub Models, the original AI backend, was r
 Prefer an LLM to author games? Set a repo secret `GS_LLM_KEY` (see below) and it takes over, with
 the procedural generator as an automatic fallback.
 
+**How repeats are avoided.** Three mechanisms keep consecutive drops feeling fresh:
+
+1. *Strict least-recently-used archetype rotation* — each archetype is ranked by how long since it
+   last shipped and the most overdue one wins, so every archetype cycles before any repeats.
+2. *Collision-free naming* — titles are checked against the entire gallery before use, and taglines
+   avoid the last six used.
+3. *Per-archetype parameter jitter* — speeds, sizes and layouts are re-rolled within safe bounds, so
+   even two games of the same archetype play differently.
+
 Every game is a true **single self-contained HTML page** in **its own folder** — premium and
 consistent because they all share one polished engine.
 
@@ -82,6 +91,13 @@ node scripts/lib/smoke.mjs games/<slug>/index.html   # headless smoke test (exit
 - **Actions → General → Workflow permissions:** *Read and write* **and** *Allow GitHub Actions
   to create and approve pull requests* (so the hourly job can open PRs with the built-in token).
 - **No AI key required** — the default generator runs entirely on the Actions runner.
+- **No personal access token required.** The workflow authenticates with `${{ github.token }}`, the
+  short-lived token GitHub mints for each run. Nothing runs on, or is needed from, your own machine.
+
+> **Note on scheduling:** GitHub runs `schedule` triggers on a best-effort basis and deprioritises
+> the top of the hour, so this workflow fires at `:23`. A newly added or changed schedule often
+> skips its first tick, and runs can be delayed under load. To force one immediately, use
+> **Actions → Hourly game drop → Run workflow**.
 
 ---
 
