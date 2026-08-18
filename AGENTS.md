@@ -1,6 +1,6 @@
 # Game Studio — generation contract
 
-This repository ships **one brand-new, self-contained, premium micro-game every hour**,
+This repository ships **brand-new, self-contained, premium micro-games on a schedule**,
 fully automatically. This file is the contract that both the automated pipeline and any
 human (or agent) contributor must follow so that quality and novelty stay high.
 
@@ -66,7 +66,7 @@ window.GAME = {
 **Important:** `meta` is read in a sandbox (no browser APIs), so the top level of `game.js`
 must be static data + a `create()` function only. Do all game logic inside `create()`.
 
-## The hourly pipeline (`scripts/generate-game.mjs`)
+## The generation pipeline (`scripts/generate-game.mjs`)
 
 1. Read `games.json` and build a **fresh creative brief** (`scripts/lib/ideas.mjs`) that avoids
    past genres/themes and mixes in a rotating seed so consecutive hours diverge.

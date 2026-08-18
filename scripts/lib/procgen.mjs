@@ -15,7 +15,7 @@
 function buildAvoider(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
   var me, foes, motes, spawnT, t;
-  function reset() { me = { x: W / 2, y: H / 2, r: P.r }; foes = []; motes = []; spawnT = 0.3; t = 0; }
+  function reset() { me = { x: W / 2, y: H / 2, r: P.r }; foes = []; motes = []; spawnT = P.grace; t = 0; }
   function spawnFoe() {
     var edge = engine.randInt(0, 3), x, y;
     if (edge === 0) { x = engine.rand(0, W); y = -20; }
@@ -663,6 +663,289 @@ function buildBarista(engine, P) {
   };
 }
 
+function buildGrill(engine, P) {
+  var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
+  var slots, strikes, t, spawnT, pops;
+  function slotRect(i) {
+    var n = P.slots, gap = 12, bw = (W - gap * (n + 1)) / n;
+    return { x: gap + i * (bw + gap), y: H * 0.34, w: bw, h: Math.min(160, H * 0.34) };
+  }
+  function reset() {
+    slots = []; for (var i = 0; i < P.slots; i++) slots.push(null);
+    strikes = 0; t = 0; spawnT = 0.4; pops = [];
+  }
+  function fail(x, y, msg) {
+    strikes++; S.hit(); engine.shake(15);
+    engine.particles.burst(x, y, { count: 18, color: P.hazard, speed: 170, life: 0.5, gravity: 90 });
+    pops.push({ x: x, y: y, life: 0.6, txt: msg, ok: 0 });
+  }
+  return {
+    setup: reset, reset: reset,
+    update: function (dt) {
+      t += dt;
+      var tap = -1;
+      if (input.pointer.justDown) {
+        for (var i = 0; i < P.slots; i++) {
+          var r = slotRect(i);
+          if (input.pointer.x >= r.x && input.pointer.x <= r.x + r.w) tap = i;
+        }
+      }
+      if (input.justPressed("left")) tap = 0;
+      if (input.justPressed("up") || input.justPressed("action")) tap = Math.min(1, P.slots - 1);
+      if (input.justPressed("right")) tap = Math.min(2, P.slots - 1);
+      if (input.justPressed("down")) tap = Math.min(3, P.slots - 1);
+
+      if (tap >= 0 && slots[tap]) {
+        var r2 = slotRect(tap), cx = r2.x + r2.w / 2, cy = r2.y + r2.h / 2, it = slots[tap];
+        if (it.p >= 1) {
+          var bonus = Math.max(1, Math.round((1 - (it.p - 1) / P.window) * 10));
+          engine.addScore(10 + bonus); S.coin();
+          engine.particles.burst(cx, cy, { count: 16, color: P.accent, speed: 160, life: 0.5, gravity: -20 });
+          pops.push({ x: cx, y: cy, life: 0.6, txt: "+" + (10 + bonus), ok: 1 });
+          slots[tap] = null;
+        } else { fail(cx, cy, "RAW"); slots[tap] = null; }
+      }
+
+      for (var j = 0; j < P.slots; j++) {
+        var s = slots[j];
+        if (!s) continue;
+        s.p += dt / P.cook;
+        if (s.p > 1 + P.window) {
+          var rr = slotRect(j);
+          fail(rr.x + rr.w / 2, rr.y + rr.h / 2, "BURNT");
+          slots[j] = null;
+        }
+      }
+      if (strikes >= P.maxStrikes) { S.over(); engine.gameOver(); return; }
+
+      spawnT -= dt;
+      if (spawnT <= 0) {
+        var free = [];
+        for (var k = 0; k < P.slots; k++) if (!slots[k]) free.push(k);
+        if (free.length) { slots[free[engine.randInt(0, free.length - 1)]] = { p: 0 }; S.blip(); }
+        spawnT = Math.max(0.7, P.spawn - t * 0.02);
+      }
+      for (var q = pops.length - 1; q >= 0; q--) { pops[q].life -= dt; if (pops[q].life <= 0) pops.splice(q, 1); }
+    },
+    render: function (ctx) {
+      ctx.fillStyle = "rgba(255,255,255,.04)";
+      var pad = 8, top = H * 0.34 - pad;
+      ctx.beginPath(); ctx.rect(pad / 2, top, W - pad, Math.min(160, H * 0.34) + pad * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.10)"; ctx.lineWidth = 1;
+      for (var g = 0; g < 7; g++) {
+        var gy = top + 10 + g * ((Math.min(160, H * 0.34) + pad * 2 - 20) / 6);
+        ctx.beginPath(); ctx.moveTo(pad, gy); ctx.lineTo(W - pad, gy); ctx.stroke();
+      }
+      for (var i = 0; i < P.slots; i++) {
+        var r = slotRect(i), s = slots[i], cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+        var ready = s && s.p >= 1;
+        ctx.save();
+        ctx.strokeStyle = ready ? "#4ade80" : "rgba(255,255,255,.16)";
+        ctx.lineWidth = ready ? 3 : 2;
+        if (ready) { ctx.shadowColor = "#4ade80"; ctx.shadowBlur = 18; }
+        ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.stroke();
+        ctx.restore();
+        if (!s) continue;
+        var raw = Math.min(1, s.p);
+        var col = ready ? (s.p > 1 + P.window * 0.6 ? "#7c4a21" : "#b5651d") : "#e08a9b";
+        ctx.save(); ctx.translate(cx, cy);
+        ctx.shadowColor = ready ? "#ffb703" : "transparent"; ctx.shadowBlur = ready ? 16 : 0;
+        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, P.pattyR, 0, 6.283); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = ready ? "#4ade80" : P.accent; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(0, 0, P.pattyR + 10, -1.5708, -1.5708 + 6.283 * raw); ctx.stroke();
+        if (ready) {
+          var over = (s.p - 1) / P.window;
+          ctx.strokeStyle = over > 0.6 ? P.hazard : "#ffb703"; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(0, 0, P.pattyR + 18, -1.5708, -1.5708 + 6.283 * (1 - over)); ctx.stroke();
+        }
+        ctx.restore();
+      }
+      for (var p = 0; p < pops.length; p++) {
+        var o = pops[p];
+        ctx.globalAlpha = Math.max(0, o.life * 1.6);
+        ctx.fillStyle = o.ok ? P.accent : P.hazard; ctx.textAlign = "center";
+        ctx.font = "bold 18px system-ui, -apple-system, Segoe UI, sans-serif";
+        ctx.fillText(o.txt, o.x, o.y - 40 - (0.6 - o.life) * 26);
+        ctx.globalAlpha = 1;
+      }
+      for (var st = 0; st < P.maxStrikes; st++) {
+        ctx.strokeStyle = st < strikes ? P.hazard : "rgba(255,255,255,.18)"; ctx.lineWidth = 3;
+        var sx = W - 26 - st * 22, sy = 22;
+        ctx.beginPath(); ctx.moveTo(sx - 6, sy - 6); ctx.lineTo(sx + 6, sy + 6);
+        ctx.moveTo(sx + 6, sy - 6); ctx.lineTo(sx - 6, sy + 6); ctx.stroke();
+      }
+    }
+  };
+}
+
+function buildFirewatch(engine, P) {
+  var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
+  var cells, t, spreadT, doused, cols, rows, cw, ch, ox, oy;
+  function idx(c, r) { return r * cols + c; }
+  function reset() {
+    cols = P.cols; rows = P.rows;
+    cw = Math.floor((W - 24) / cols); ch = Math.floor((H - 120) / rows);
+    var sz = Math.min(cw, ch); cw = sz; ch = sz;
+    ox = Math.floor((W - cw * cols) / 2); oy = Math.floor((H - ch * rows) / 2) + 10;
+    cells = []; for (var i = 0; i < cols * rows; i++) cells.push(0);
+    cells[idx(cols >> 1, rows >> 1)] = 1;
+    t = 0; spreadT = P.spread; doused = 0;
+  }
+  return {
+    setup: reset, reset: reset,
+    update: function (dt) {
+      t += dt;
+      if (input.pointer.justDown) {
+        var c = Math.floor((input.pointer.x - ox) / cw), r = Math.floor((input.pointer.y - oy) / ch);
+        if (c >= 0 && c < cols && r >= 0 && r < rows && cells[idx(c, r)] === 1) {
+          cells[idx(c, r)] = 2; doused++; engine.addScore(8); S.coin();
+          engine.particles.burst(ox + c * cw + cw / 2, oy + r * ch + ch / 2, { count: 14, color: P.accent, speed: 140, life: 0.5, gravity: -40 });
+        } else { S.blip(); }
+      }
+      spreadT -= dt;
+      if (spreadT <= 0) {
+        spreadT = Math.max(0.5, P.spread - t * 0.02);
+        var born = [];
+        for (var rr = 0; rr < rows; rr++) for (var cc = 0; cc < cols; cc++) {
+          if (cells[idx(cc, rr)] !== 1) continue;
+          var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+          for (var d = 0; d < 4; d++) {
+            var nc = cc + dirs[d][0], nr = rr + dirs[d][1];
+            if (nc < 0 || nc >= cols || nr < 0 || nr >= rows) continue;
+            if (cells[idx(nc, nr)] === 0 && engine.chance(P.catch)) born.push(idx(nc, nr));
+          }
+        }
+        for (var b = 0; b < born.length; b++) cells[born[b]] = 1;
+        if (born.length) S.tick();
+        var burning = 0;
+        for (var i = 0; i < cells.length; i++) if (cells[i] === 1) burning++;
+        if (burning === 0) { cells[engine.randInt(0, cells.length - 1)] = 1; }
+        if (burning >= P.maxFires) { S.hit(); engine.shake(22); S.over(); engine.gameOver(); return; }
+      }
+    },
+    render: function (ctx) {
+      for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) {
+        var v = cells[idx(c, r)], x = ox + c * cw, y = oy + r * ch;
+        ctx.fillStyle = v === 2 ? "rgba(255,255,255,.05)" : "rgba(255,255,255,.03)";
+        ctx.beginPath(); ctx.rect(x + 2, y + 2, cw - 4, ch - 4); ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,.07)"; ctx.lineWidth = 1; ctx.stroke();
+        if (v === 1) {
+          var f = 0.7 + Math.sin(t * 9 + (c + r)) * 0.3;
+          ctx.save();
+          ctx.shadowColor = P.hazard; ctx.shadowBlur = 18 * f;
+          ctx.fillStyle = P.hazard;
+          ctx.beginPath(); ctx.arc(x + cw / 2, y + ch / 2, (Math.min(cw, ch) / 2 - 5) * f, 0, 6.283); ctx.fill();
+          ctx.fillStyle = "#ffb703";
+          ctx.beginPath(); ctx.arc(x + cw / 2, y + ch / 2, (Math.min(cw, ch) / 4) * f, 0, 6.283); ctx.fill();
+          ctx.restore();
+        } else if (v === 2) {
+          ctx.fillStyle = "rgba(110,231,255,.18)";
+          ctx.beginPath(); ctx.arc(x + cw / 2, y + ch / 2, Math.min(cw, ch) / 5, 0, 6.283); ctx.fill();
+        }
+      }
+      var burning = 0;
+      for (var i = 0; i < cells.length; i++) if (cells[i] === 1) burning++;
+      ctx.fillStyle = burning > P.maxFires * 0.66 ? P.hazard : "rgba(255,255,255,.55)";
+      ctx.textAlign = "left"; ctx.font = "600 12px system-ui, -apple-system, Segoe UI, sans-serif";
+      ctx.fillText("fires " + burning + "/" + P.maxFires + "   doused " + doused, 22, 24);
+    }
+  };
+}
+
+function buildPowerGrid(engine, P) {
+  var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
+  var supply, demand, phase, stability, t, hist, surgeT;
+  function demandAt(ph) {
+    return engine.clamp(0.5 + Math.sin(ph * P.w1) * 0.22 + Math.sin(ph * P.w2 + 1.3) * 0.14, 0.06, 0.94);
+  }
+  function reset() {
+    phase = 0; stability = 1; t = 0; surgeT = 3;
+    demand = demandAt(0);
+    // start matched to demand, otherwise the run begins already out of band
+    supply = demand;
+    hist = []; for (var i = 0; i < 60; i++) hist.push({ s: supply, d: demand });
+  }
+  return {
+    setup: reset, reset: reset,
+    update: function (dt) {
+      t += dt; phase += dt;
+      // demand drifts on layered sine waves, with occasional surges
+      demand = demandAt(phase);
+      surgeT -= dt;
+      if (surgeT <= 0) { surgeT = engine.rand(3.5, 7); demand += engine.chance(0.5) ? 0.16 : -0.16; S.tick(); }
+      demand = engine.clamp(demand, 0.06, 0.94);
+
+      var d = input.dir();
+      if (d.y) supply -= d.y * P.rate * dt;
+      if (input.pointer.down) supply += ((1 - (input.pointer.y / H)) - supply) * Math.min(1, dt * P.follow);
+      supply = engine.clamp(supply, 0, 1);
+
+      var err = Math.abs(supply - demand);
+      if (err <= P.band) {
+        stability = Math.min(1, stability + dt * P.recover);
+        engine.addScore(1);
+        if (Math.floor(t * 2) % 2 === 0 && err < P.band * 0.35) engine.addScore(1);
+      } else {
+        // cap the penalty multiplier so a big swing can't wipe the meter instantly
+        stability -= dt * P.drain * Math.min(1.25, err / P.band);
+        if (stability <= 0) {
+          S.hit(); engine.shake(24);
+          engine.particles.burst(W / 2, H * (1 - supply), { count: 40, color: P.hazard, speed: 240, life: 0.8 });
+          S.over(); engine.gameOver(); return;
+        }
+      }
+      hist.push({ s: supply, d: demand });
+      if (hist.length > 70) hist.shift();
+    },
+    render: function (ctx) {
+      var y = function (v) { return H - 70 - v * (H - 150); };
+      // tolerance band around demand
+      ctx.fillStyle = "rgba(110,231,255,.10)";
+      ctx.beginPath();
+      ctx.rect(0, y(demand + P.band), W, Math.max(2, y(demand - P.band) - y(demand + P.band)));
+      ctx.fill();
+
+      ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.35)";
+      ctx.beginPath();
+      for (var i = 0; i < hist.length; i++) {
+        var x = (i / (hist.length - 1)) * W;
+        if (i === 0) ctx.moveTo(x, y(hist[i].d)); else ctx.lineTo(x, y(hist[i].d));
+      }
+      ctx.stroke();
+
+      ctx.lineWidth = 3; ctx.strokeStyle = P.accent;
+      ctx.save(); ctx.shadowColor = P.accent; ctx.shadowBlur = 12;
+      ctx.beginPath();
+      for (var j = 0; j < hist.length; j++) {
+        var x2 = (j / (hist.length - 1)) * W;
+        if (j === 0) ctx.moveTo(x2, y(hist[j].s)); else ctx.lineTo(x2, y(hist[j].s));
+      }
+      ctx.stroke(); ctx.restore();
+
+      var inBand = Math.abs(supply - demand) <= P.band;
+      ctx.save();
+      ctx.shadowColor = inBand ? "#4ade80" : P.hazard; ctx.shadowBlur = 20;
+      ctx.fillStyle = inBand ? "#4ade80" : P.hazard;
+      ctx.beginPath(); ctx.arc(W - 26, y(supply), 9, 0, 6.283); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = "rgba(255,255,255,.30)";
+      ctx.beginPath(); ctx.arc(W - 26, y(demand), 5, 0, 6.283); ctx.fill();
+
+      // stability meter
+      ctx.fillStyle = "rgba(255,255,255,.10)";
+      ctx.beginPath(); ctx.rect(22, H - 42, W - 44, 10); ctx.fill();
+      ctx.fillStyle = stability < 0.35 ? P.hazard : P.accent2;
+      ctx.beginPath(); ctx.rect(22, H - 42, (W - 44) * Math.max(0, stability), 10); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.textAlign = "left";
+      ctx.font = "600 12px system-ui, -apple-system, Segoe UI, sans-serif";
+      ctx.fillText("GRID STABILITY", 22, H - 50);
+      ctx.textAlign = "right";
+      ctx.fillText(inBand ? "BALANCED" : "OUT OF BAND", W - 22, H - 50);
+    }
+  };
+}
+
 // ---------- variation ----------
 
 // Per-archetype jitter ranges. Two games of the same archetype should still *play*
@@ -678,7 +961,10 @@ const JITTER = {
   sorter: { fall: [0.82, 1.28], spawn: [0.78, 1.25], steer: [0.80, 1.30], itemR: [0.88, 1.15], ramp: [0.70, 1.40] },
   elevator: { carSpeed: [0.85, 1.25], patience: [0.82, 1.20], spawn: [0.78, 1.25], floors: [0.85, 1.25], capacity: [0.80, 1.40] },
   traffic: { carSpeed: [0.85, 1.25], spawn: [0.78, 1.28], patience: [0.85, 1.25], roadW: [0.88, 1.15], maxCars: [0.80, 1.30] },
-  barista: { perItem: [0.85, 1.22], time: [0.85, 1.25], penalty: [0.80, 1.30], maxLen: [0.85, 1.25] }
+  barista: { perItem: [0.85, 1.22], time: [0.85, 1.25], penalty: [0.80, 1.30], maxLen: [0.85, 1.25] },
+  grill: { cook: [0.82, 1.22], window: [0.85, 1.20], spawn: [0.80, 1.25], slots: [0.80, 1.30], pattyR: [0.90, 1.12] },
+  firewatch: { spread: [0.82, 1.22], catch: [0.80, 1.30], maxFires: [0.85, 1.25], cols: [0.85, 1.20], rows: [0.85, 1.20] },
+  powergrid: { w1: [0.80, 1.30], w2: [0.80, 1.30], band: [0.85, 1.20], rate: [0.85, 1.20], drain: [0.85, 1.25] }
 };
 
 // Scale numeric params in place. Integers stay integers, signs are preserved (flap is
@@ -704,6 +990,14 @@ function jitterParams(key, P, rng) {
   if (typeof out.minLen === "number" && typeof out.maxLen === "number" && out.maxLen < out.minLen) out.maxLen = out.minLen;
   if (typeof out.floors === "number") out.floors = Math.max(3, Math.min(7, out.floors));
   if (typeof out.capacity === "number") out.capacity = Math.max(1, Math.min(4, out.capacity));
+  if (key === "grill" && typeof out.slots === "number") out.slots = Math.max(3, Math.min(5, out.slots));
+  if (key === "firewatch") {
+    out.cols = Math.max(5, Math.min(8, out.cols));
+    out.rows = Math.max(6, Math.min(10, out.rows));
+    // the board must never start already lost, and must stay winnable
+    out.maxFires = Math.max(8, Math.min(Math.floor(out.cols * out.rows * 0.45), out.maxFires));
+  }
+  if (key === "powergrid" && typeof out.band === "number") out.band = Math.max(0.07, Math.min(0.16, out.band));
   return out;
 }
 
@@ -727,7 +1021,7 @@ const ARCH = [
     build: buildAvoider, nouns: ["Drift", "Swarm", "Rift", "Field", "Vortex", "Pulse"],
     controls: "Drag / Arrow keys to move",
     how: "Glide to dodge the incoming shards and scoop the glowing motes. One hit and it's over.",
-    params: (b) => ({ r: 14, follow: 16, kspeed: 340 + b.fast * 120, foeSpeed: 130 + b.fast * 60, foeMin: 8, foeMax: 16, ramp: 10, spawn: 0.9 - b.fast * 0.2, moteR: 9, motes: 3, accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD })
+    params: (b) => ({ r: 14, follow: 16, kspeed: 340 + b.fast * 120, foeSpeed: 130 + b.fast * 60, foeMin: 8, foeMax: 16, ramp: 10, spawn: 0.9 - b.fast * 0.2, grace: 1.3, moteR: 9, motes: 3, accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD })
   },
   {
     key: "flapper", genre: "reflex", mechanic: "tap-to-flap through gaps", emoji: "\uD83E\uDEBD", orient: "portrait",
@@ -803,6 +1097,36 @@ const ARCH = [
     params: (b) => ({
       ing: [{ n: "ESPRESSO", c: "#c98a5b" }, { n: "MILK", c: "#f4f1ea" }, { n: "SYRUP", c: b.pal.accent }, { n: "FOAM", c: b.pal.accent2 }],
       minLen: 2, maxLen: 5, time: 3.2, perItem: 1.5 - b.fast * 0.3, penalty: 1.1, accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD
+    })
+  },
+  {
+    key: "grill", genre: "simulation", mechanic: "short-order grill timing", emoji: "\uD83C\uDF54", orient: "portrait",
+    build: buildGrill, nouns: ["Short Order", "The Pass", "Diner Rush", "Line Cook", "Grill Shift", "Table Six"],
+    controls: "Tap a grill slot / Arrow keys",
+    how: "You're on the grill during service. Pull each patty in its window \u2014 too early is raw, too late is burnt. Three ruined and service is over.",
+    params: (b) => ({
+      slots: 4, cook: 3.4 - b.fast * 0.8, window: 0.42, spawn: 1.9 - b.fast * 0.4, pattyR: 22, maxStrikes: 3,
+      accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD
+    })
+  },
+  {
+    key: "firewatch", genre: "simulation", mechanic: "wildfire containment", emoji: "\uD83D\uDD25", orient: "any",
+    build: buildFirewatch, nouns: ["Fire Watch", "Containment", "The Ridge", "Backburn", "Hotspot", "Dry Season"],
+    controls: "Tap a burning tile to douse it",
+    how: "You're the fire warden. Douse hotspots before they jump to neighbouring ground \u2014 let the fire get away from you and the ridge is lost.",
+    params: (b) => ({
+      cols: 6, rows: 8, spread: 1.5 - b.fast * 0.35, catch: 0.16, maxFires: 14,
+      accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD
+    })
+  },
+  {
+    key: "powergrid", genre: "simulation", mechanic: "power grid balancing", emoji: "\u26A1", orient: "any",
+    build: buildPowerGrid, nouns: ["Load Balance", "The Grid", "Peak Demand", "Control Room", "Baseload", "Brownout"],
+    controls: "Drag / Up-Down arrows to set output",
+    how: "You're running the control room. Track demand with your generation \u2014 drift outside the tolerance band and the grid destabilises into a blackout.",
+    params: (b) => ({
+      w1: 0.55 + b.fast * 0.35, w2: 1.35 + b.fast * 0.5, band: 0.1, rate: 0.55, follow: 9,
+      drain: 0.22 + b.fast * 0.10, recover: 0.22, accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD
     })
   }
 ];

@@ -1,10 +1,14 @@
-name: Hourly game drop
+name: Game drop
 
 on:
   schedule:
-    - cron: "23 * * * *"     # every hour at :23 — deliberately off the top of the
-                             # hour, which is GitHub's most congested cron slot and
-                             # where scheduled runs are most often delayed or dropped.
+    # Every 4 hours at :23 (00:23, 04:23, 08:23, 12:23, 16:23, 20:23 UTC).
+    # The minute is deliberately off the top of the hour: that is GitHub's most
+    # congested cron slot, where scheduled runs are most often delayed or dropped.
+    # Change the hour field to alter the cadence, e.g.
+    #   "23 * * * *"    hourly            "23 */2 * * *"  every 2 hours
+    #   "23 */6 * * *"  every 6 hours     "23 9 * * *"    once a day at 09:23
+    - cron: "23 */4 * * *"
   workflow_dispatch:
     inputs:
       model:

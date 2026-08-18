@@ -1,10 +1,10 @@
 # 🎮 Game Studio
 
-**A new, self-contained, premium micro-game — invented and built automatically every hour.**
+**A new, self-contained, premium micro-game — invented and built automatically, every few hours.**
 
 Live site → **https://kuldeepcodes.github.io/gamestudio/**
 
-Every hour a GitHub Actions workflow dreams up a fresh idea (a distinct genre + mechanic +
+On a schedule a GitHub Actions workflow dreams up a fresh idea (a distinct genre + mechanic +
 theme, never a reskin), implements it against a polished shared game engine, **smoke-tests it
 headlessly**, and opens a **Pull Request**. You review it and merge to publish — the game then
 appears on the gallery homepage.
@@ -14,7 +14,7 @@ appears on the gallery homepage.
 ## How it works
 
 ```
-┌ every hour (GitHub Actions cron) ─────────────────────────────────────────────┐
+┌ every 4 hours (GitHub Actions cron) ──────────────────────────────────────────┐
 │  ideas.mjs   → fresh creative brief (avoids past genres/themes, rotating seed)  │
 │  procgen.mjs → picks & parameterizes a premium game archetype for that brief    │
 │                (or your own model authors it, if you set GS_LLM_KEY)            │
@@ -35,14 +35,17 @@ original AI backend, was retired 2026-07-30.) Prefer an LLM to author games? Set
 The pool spans two flavours:
 
 - **Real-world simulations** — a recycling sorting line, an elevator dispatcher, a road junction
-  you signal, a café order bar. Small slices of everyday work, with real failure modes
-  (missorts, lost patience, collisions, walked customers).
+  you signal, a café order bar, a short-order grill, a wildfire you must contain, and a power grid
+  you keep balanced against demand. Small slices of everyday work, with real failure modes
+  (missorts, lost patience, collisions, walked customers, burnt food, blackouts).
 - **Arcade classics** — dodge, flap, lane-run, brick-breaker, stack, reflex.
 
 **How repeats are avoided.** Three mechanisms keep consecutive drops feeling fresh:
 
 1. *Strict least-recently-used archetype rotation* — each archetype is ranked by how long since it
-   last shipped and the most overdue one wins, so all 10 cycle before any repeats.
+   last shipped and the most overdue one wins, so all 13 cycle before any repeats. At the default
+   4-hourly cadence that is **~52 hours between repeats of a mechanic**. Games still awaiting review
+   in an open PR count too, so rotation keeps advancing even if you merge in batches.
 2. *Collision-free naming* — titles are checked against the entire gallery before use, and taglines
    avoid the last six used.
 3. *Per-archetype parameter jitter* — speeds, sizes and layouts are re-rolled within safe bounds, so
@@ -66,7 +69,7 @@ AGENTS.md               Full generation contract (read this to contribute/tune)
 
 ## Run it yourself
 
-**Trigger a game now:** Actions → *Hourly game drop* → **Run workflow** (optionally pass a
+**Trigger a game now:** Actions → *Game drop* → **Run workflow** (optionally pass a
 `model` or `seed`). It opens a PR you can review.
 
 **Local pipeline test (no key, the real production path):**
@@ -84,7 +87,7 @@ node scripts/lib/smoke.mjs games/<slug>/index.html   # headless smoke test (exit
 ## Tuning & pausing
 
 - **Cadence / pause:** edit the `cron` in `.github/workflows/hourly-game.yml`, or disable the
-  workflow from the Actions tab. Hourly can mean up to ~24 PRs/day — dial back anytime.
+  workflow from the Actions tab. The default is every 4 hours (~6 PRs/day); hourly is ~24.
 - **More variety:** add archetypes or tweak tuning in `scripts/lib/procgen.mjs`, and widen the
   idea pools in `scripts/lib/ideas.mjs`.
 - **Use your own AI model (optional):** set repo secrets `GS_LLM_KEY` (+ optional `GS_LLM_ENDPOINT`,
@@ -95,7 +98,7 @@ node scripts/lib/smoke.mjs games/<slug>/index.html   # headless smoke test (exit
 
 - **Pages:** enabled, deploy from `main` (root). Site: `https://kuldeepcodes.github.io/gamestudio/`.
 - **Actions → General → Workflow permissions:** *Read and write* **and** *Allow GitHub Actions
-  to create and approve pull requests* (so the hourly job can open PRs with the built-in token).
+  to create and approve pull requests* (so the scheduled job can open PRs with the built-in token).
 - **No AI key required** — the default generator runs entirely on the Actions runner.
 - **No personal access token required.** The workflow authenticates with `${{ github.token }}`, the
   short-lived token GitHub mints for each run. Nothing runs on, or is needed from, your own machine.
@@ -103,8 +106,8 @@ node scripts/lib/smoke.mjs games/<slug>/index.html   # headless smoke test (exit
 > **Note on scheduling:** GitHub runs `schedule` triggers on a best-effort basis and deprioritises
 > the top of the hour, so this workflow fires at `:23`. A newly added or changed schedule often
 > skips its first tick, and runs can be delayed under load. To force one immediately, use
-> **Actions → Hourly game drop → Run workflow**.
+> **Actions → Game drop → Run workflow**.
 
 ---
 
-Built with vanilla JS, a lot of "juice", and a fresh idea every hour.
+Built with vanilla JS, a lot of "juice", and a fresh idea every few hours.
