@@ -1,0 +1,28 @@
+{
+  "id": "silent-blocks",
+  "slug": "2026-08-18-silent-blocks",
+  "title": "Silent Blocks",
+  "tagline": "Push your luck.",
+  "description": "Silent Blocks — a neon cyberpunk precision block stacking game. Tap to drop each block on the one below. Overhang gets sliced off — miss completely and the tower falls.",
+  "genre": "timing",
+  "mechanic": "precision block stacking",
+  "theme": "neon cyberpunk",
+  "tags": [
+    "timing",
+    "stacker",
+    "arcade",
+    "satisfying"
+  ],
+  "accent": "#7CFFCB",
+  "accent2": "#4ADEDE",
+  "bg": "#04160f",
+  "emoji": "🏗️",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "grid puzzle",
+    "theme": "neon cyberpunk",
+    "twist": "everything moves to a pulsing beat",
+    "mood": "satisfying"
+  }
+}
