@@ -66,9 +66,14 @@ must be static data + a `create()` function only. Do all game logic inside `crea
 
 1. Read `games.json` and build a **fresh creative brief** (`scripts/lib/ideas.mjs`) that avoids
    past genres/themes and mixes in a rotating seed so consecutive hours diverge.
-2. Ask **GitHub Models** (`scripts/lib/llm.mjs`) to write a `game.js` for that brief.
+2. **Generate a `game.js` for that brief.** Default: `scripts/lib/procgen.mjs` picks and
+   parameterizes a hand-crafted premium **archetype** (free, offline, always available). If the
+   repo secret `GS_LLM_KEY` is set, an OpenAI-compatible model authors it instead
+   (`scripts/lib/llm.mjs`), with the procedural generator as a fallback.
+   *(GitHub Models, the original backend, was retired 2026-07-30.)*
 3. Build it (`build-game.mjs`) → **smoke-test** it headlessly (`scripts/lib/smoke.mjs`).
-4. If it errors, ask the model to **repair** it (up to 3 tries). Only a clean game ships.
+4. If it errors, try another variant (procedural) or ask the model to **repair** it (LLM). Only a
+   clean game ships.
 5. Register it in `games.json`, write `meta.json`, and the workflow opens a **Pull Request**.
 
 You review the PR (preview locally), then **merge to publish** — GitHub Pages redeploys and the
@@ -86,7 +91,8 @@ Append the newest game to the front of `games`. Each entry:
 ## Tuning / pausing
 
 - Change cadence or disable: edit / disable `.github/workflows/hourly-game.yml` (`cron`).
-- Change the model: workflow input `model`, or repo secrets `GS_LLM_KEY` / `GS_LLM_ENDPOINT` /
-  `GS_MODEL` to use any OpenAI-compatible provider instead of GitHub Models.
-- Raise the bar: tighten `engine/api.md`, `scripts/lib/ideas.mjs` (idea pools), or the prompt
-  in `scripts/lib/llm.mjs`.
+- Add variety: add or tune archetypes in `scripts/lib/procgen.mjs`; widen the idea pools in
+  `scripts/lib/ideas.mjs`.
+- Use your own AI model (optional): set repo secrets `GS_LLM_KEY` / `GS_LLM_ENDPOINT` / `GS_MODEL`
+  (any OpenAI-compatible provider). GitHub Models is no longer available (retired 2026-07-30).
+- Raise the bar: tighten `engine/api.md` and the engine itself.

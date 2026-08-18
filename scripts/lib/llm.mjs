@@ -1,21 +1,15 @@
-// LLM client for game generation. Defaults to GitHub Models (authenticated by the
-// Actions GITHUB_TOKEN with `models: read`), with an optional override to any
-// OpenAI-compatible endpoint via env: GS_LLM_KEY + GS_LLM_ENDPOINT + GS_MODEL.
+// Optional LLM client for game generation. GitHub Models was retired (2026-07-30), so this is
+// only used when the repo provides its own OpenAI-compatible key via env:
+// GS_LLM_KEY (required) + optional GS_LLM_ENDPOINT + GS_MODEL. Otherwise the procedural
+// generator (scripts/lib/procgen.mjs) is used instead and this file is never called.
 
 function providerConfig() {
   const key = process.env.GS_LLM_KEY;
-  if (key) {
-    return {
-      endpoint: process.env.GS_LLM_ENDPOINT || "https://api.openai.com/v1/chat/completions",
-      token: key,
-      models: [process.env.GS_MODEL || "gpt-4o"]
-    };
-  }
-  const token = process.env.GS_LLM_KEY || process.env.MODELS_TOKEN || process.env.GITHUB_TOKEN;
+  if (!key) throw new Error("GS_LLM_KEY not set — no LLM provider configured.");
   return {
-    endpoint: process.env.GS_LLM_ENDPOINT || "https://models.github.ai/inference/chat/completions",
-    token,
-    models: (process.env.GS_MODEL ? [process.env.GS_MODEL] : ["openai/gpt-4o", "openai/gpt-4o-mini"])
+    endpoint: process.env.GS_LLM_ENDPOINT || "https://api.openai.com/v1/chat/completions",
+    token: key,
+    models: process.env.GS_MODEL ? [process.env.GS_MODEL] : ["gpt-4o", "gpt-4o-mini"]
   };
 }
 

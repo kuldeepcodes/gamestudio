@@ -3,4 +3,5 @@ node_modules/
 .gh_token
 .DS_Store
 games/__wip__/
+games/__test__/
 *.log

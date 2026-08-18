@@ -16,18 +16,25 @@ appears on the gallery homepage.
 ```
 ┌ every hour (GitHub Actions cron) ─────────────────────────────────────────────┐
 │  ideas.mjs   → fresh creative brief (avoids past genres/themes, rotating seed)  │
-│  llm.mjs     → GitHub Models writes a compact game.js for that brief            │
+│  procgen.mjs → picks & parameterizes a premium game archetype for that brief    │
+│                (or your own model authors it, if you set GS_LLM_KEY)            │
 │  build-game  → inlines engine + game + UI shell → one self-contained index.html │
 │  smoke.mjs   → headless (jsdom) test: loads, starts, takes input, 100+ frames   │
-│  repair loop → if it errors, ask the model to fix it (up to 3×); clean-only     │
+│  retry/repair→ if it errors, try another variant (or ask the model); clean-only │
 │  manifest    → register in games.json + write meta.json                         │
 │  → opens a Pull Request  ──►  you review & merge  ──►  GitHub Pages redeploys    │
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Why an engine + a small `game.js` (instead of raw HTML per game)? It keeps every game
-**premium and consistent**, keeps the AI's output small and reliable, and still gives you a
-true **single self-contained HTML page** in **its own folder** per game.
+The default generator is **local and free**: a library of hand-crafted, pre-tested premium game
+archetypes (dodge, flap, lane-runner, brick-breaker, stacker, reflex…) combined with the idea
+engine (theme × palette × orientation × tuning) to yield thousands of distinct, guaranteed-working
+games — no API key, no network. (GitHub Models, the original AI backend, was retired 2026-07-30.)
+Prefer an LLM to author games? Set a repo secret `GS_LLM_KEY` (see below) and it takes over, with
+the procedural generator as an automatic fallback.
+
+Every game is a true **single self-contained HTML page** in **its own folder** — premium and
+consistent because they all share one polished engine.
 
 ## Repository layout
 
@@ -37,7 +44,7 @@ assets/                 gallery.css, gallery.js  (homepage only)
 games.json              Manifest of every game
 games/<date-slug>/      ONE FOLDER PER GAME — index.html (self-contained) + game.js + meta.json
 engine/                 Shared engine: engine.js, shell.html, shell.css, api.md (the contract)
-scripts/                generate-game.mjs (orchestrator), build-game.mjs, lib/ (ideas, llm, smoke, manifest)
+scripts/                generate-game.mjs (orchestrator), build-game.mjs, lib/ (ideas, procgen, llm, smoke, manifest)
 .github/workflows/      hourly-game.yml (the scheduler)
 AGENTS.md               Full generation contract (read this to contribute/tune)
 ```
@@ -47,10 +54,10 @@ AGENTS.md               Full generation contract (read this to contribute/tune)
 **Trigger a game now:** Actions → *Hourly game drop* → **Run workflow** (optionally pass a
 `model` or `seed`). It opens a PR you can review.
 
-**Local pipeline test (no model call):**
+**Local pipeline test (no key, the real production path):**
 ```bash
 cd scripts && npm install
-cd .. && GS_FAKE=1 node scripts/generate-game.mjs      # rebuilds the seed game through the full pipeline
+cd .. && node scripts/generate-game.mjs      # invents + builds + smoke-tests a brand-new game
 ```
 
 **Build / test a single game:**
@@ -63,17 +70,18 @@ node scripts/lib/smoke.mjs games/<slug>/index.html   # headless smoke test (exit
 
 - **Cadence / pause:** edit the `cron` in `.github/workflows/hourly-game.yml`, or disable the
   workflow from the Actions tab. Hourly can mean up to ~24 PRs/day — dial back anytime.
-- **Model:** workflow input `model`, or set repo secrets `GS_LLM_KEY` (+ `GS_LLM_ENDPOINT`,
-  `GS_MODEL`) to use any OpenAI-compatible provider instead of GitHub Models.
-- **Creativity / quality:** tune the idea pools in `scripts/lib/ideas.mjs`, the prompt in
-  `scripts/lib/llm.mjs`, and the engine contract in `engine/api.md`.
+- **More variety:** add archetypes or tweak tuning in `scripts/lib/procgen.mjs`, and widen the
+  idea pools in `scripts/lib/ideas.mjs`.
+- **Use your own AI model (optional):** set repo secrets `GS_LLM_KEY` (+ optional `GS_LLM_ENDPOINT`,
+  `GS_MODEL`) to have an OpenAI-compatible model author games; the procedural generator stays as a
+  fallback. (GitHub Models is no longer available — it was retired 2026-07-30.)
 
 ## Requirements for the automation to run
 
 - **Pages:** enabled, deploy from `main` (root). Site: `https://kuldeepcodes.github.io/gamestudio/`.
 - **Actions → General → Workflow permissions:** *Read and write* **and** *Allow GitHub Actions
   to create and approve pull requests* (so the hourly job can open PRs with the built-in token).
-- **GitHub Models:** granted to the workflow via `permissions: models: read` (already in the YAML).
+- **No AI key required** — the default generator runs entirely on the Actions runner.
 
 ---
 

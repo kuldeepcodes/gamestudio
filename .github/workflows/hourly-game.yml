@@ -14,11 +14,10 @@ on:
         required: false
         type: string
 
-# Let GITHUB_TOKEN push a branch, open a PR, and call GitHub Models.
+# Let GITHUB_TOKEN push a branch and open a PR.
 permissions:
   contents: write
   pull-requests: write
-  models: read
 
 concurrency:
   group: hourly-game
@@ -44,10 +43,10 @@ jobs:
       - name: Generate a new game
         id: gen
         env:
-          GITHUB_TOKEN: ${{ github.token }}          # used to call GitHub Models
           GS_MODEL: ${{ inputs.model }}
           GS_SEED: ${{ inputs.seed }}
-          # Optional: set repo secret GS_LLM_KEY (+ GS_LLM_ENDPOINT/GS_MODEL) to use an external model instead.
+          # Default backend is a local procedural generator (no key needed).
+          # Optional: set repo secrets to author games with your own OpenAI-compatible model instead.
           GS_LLM_KEY: ${{ secrets.GS_LLM_KEY }}
           GS_LLM_ENDPOINT: ${{ secrets.GS_LLM_ENDPOINT }}
         run: node scripts/generate-game.mjs
