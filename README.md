@@ -27,16 +27,22 @@ appears on the gallery homepage.
 ```
 
 The default generator is **local and free**: a library of hand-crafted, pre-tested premium game
-archetypes (dodge, flap, lane-runner, brick-breaker, stacker, reflex…) combined with the idea
-engine (theme × palette × orientation × tuning) to yield thousands of distinct, guaranteed-working
-games — no API key, no network. (GitHub Models, the original AI backend, was retired 2026-07-30.)
-Prefer an LLM to author games? Set a repo secret `GS_LLM_KEY` (see below) and it takes over, with
-the procedural generator as an automatic fallback.
+archetypes combined with the idea engine (theme × palette × orientation × tuning) to yield
+thousands of distinct, guaranteed-working games — no API key, no network. (GitHub Models, the
+original AI backend, was retired 2026-07-30.) Prefer an LLM to author games? Set a repo secret
+`GS_LLM_KEY` (see below) and it takes over, with the procedural generator as an automatic fallback.
+
+The pool spans two flavours:
+
+- **Real-world simulations** — a recycling sorting line, an elevator dispatcher, a road junction
+  you signal, a café order bar. Small slices of everyday work, with real failure modes
+  (missorts, lost patience, collisions, walked customers).
+- **Arcade classics** — dodge, flap, lane-run, brick-breaker, stack, reflex.
 
 **How repeats are avoided.** Three mechanisms keep consecutive drops feeling fresh:
 
 1. *Strict least-recently-used archetype rotation* — each archetype is ranked by how long since it
-   last shipped and the most overdue one wins, so every archetype cycles before any repeats.
+   last shipped and the most overdue one wins, so all 10 cycle before any repeats.
 2. *Collision-free naming* — titles are checked against the entire gallery before use, and taglines
    avoid the last six used.
 3. *Per-archetype parameter jitter* — speeds, sizes and layouts are re-rolled within safe bounds, so
