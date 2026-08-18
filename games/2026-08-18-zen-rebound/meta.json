@@ -1,0 +1,28 @@
+{
+  "id": "zen-rebound",
+  "slug": "2026-08-18-zen-rebound",
+  "title": "Zen Rebound",
+  "tagline": "Easy to learn. Hard to master.",
+  "description": "Zen Rebound — a zen garden endless brick-breaker game. Bounce the ball to shatter every brick. Clear a wave and a denser one drops. Miss the ball and it's over.",
+  "genre": "arcade",
+  "mechanic": "endless brick-breaker",
+  "theme": "zen garden",
+  "tags": [
+    "arcade",
+    "paddle",
+    "arcade",
+    "playful"
+  ],
+  "accent": "#5eead4",
+  "accent2": "#fca5a5",
+  "bg": "#04140f",
+  "emoji": "🧱",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "aiming / slingshot",
+    "theme": "zen garden",
+    "twist": "chain combos multiply the score",
+    "mood": "playful"
+  }
+}
