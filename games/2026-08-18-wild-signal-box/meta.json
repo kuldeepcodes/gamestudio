@@ -1,0 +1,28 @@
+{
+  "id": "wild-signal-box",
+  "slug": "2026-08-18-wild-signal-box",
+  "title": "Wild Signal Box",
+  "tagline": "Reflexes required.",
+  "description": "Wild Signal Box — a arctic aurora junction signal control game. You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash.",
+  "genre": "simulation",
+  "mechanic": "junction signal control",
+  "theme": "arctic aurora",
+  "tags": [
+    "simulation",
+    "traffic",
+    "arcade",
+    "meditative"
+  ],
+  "accent": "#e879f9",
+  "accent2": "#38bdf8",
+  "bg": "#0a0416",
+  "emoji": "🚦",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "memory recall",
+    "theme": "arctic aurora",
+    "twist": "a hazard chases your trail",
+    "mood": "meditative"
+  }
+}

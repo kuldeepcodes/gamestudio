@@ -2,6 +2,90 @@
   "updated": "2026-08-18",
   "games": [
     {
+      "id": "midnight-lift-duty",
+      "slug": "2026-08-18-midnight-lift-duty",
+      "title": "Midnight Lift Duty",
+      "tagline": "Simple. Ruthless.",
+      "description": "Midnight Lift Duty — a molten lava elevator dispatch game. You're the lift operator in a busy tower. Collect waiting people and drop them at their floor before anyone's patience runs out.",
+      "genre": "simulation",
+      "mechanic": "elevator dispatch",
+      "theme": "molten lava",
+      "tags": [
+        "simulation",
+        "elevator",
+        "arcade",
+        "frantic"
+      ],
+      "accent": "#f9a8d4",
+      "accent2": "#c084fc",
+      "bg": "#160a1e",
+      "emoji": "🛗",
+      "date": "2026-08-18"
+    },
+    {
+      "id": "feral-espresso-bar",
+      "slug": "2026-08-18-feral-espresso-bar",
+      "title": "Feral Espresso Bar",
+      "tagline": "Don't blink.",
+      "description": "Feral Espresso Bar — a desert mirage cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks.",
+      "genre": "simulation",
+      "mechanic": "cafe order assembly",
+      "theme": "desert mirage",
+      "tags": [
+        "simulation",
+        "barista",
+        "arcade",
+        "playful"
+      ],
+      "accent": "#5eead4",
+      "accent2": "#fca5a5",
+      "bg": "#04140f",
+      "emoji": "☕",
+      "date": "2026-08-18"
+    },
+    {
+      "id": "deep-depot",
+      "slug": "2026-08-18-deep-depot",
+      "title": "Deep Depot",
+      "tagline": "Deceptively simple.",
+      "description": "Deep Depot — a deep-space recycling line sorting game. You're running the sorting line at a recycling plant. Steer each item down the chute into the matching bin — three missorts and the line shuts down.",
+      "genre": "simulation",
+      "mechanic": "recycling line sorting",
+      "theme": "deep-space",
+      "tags": [
+        "simulation",
+        "sorter",
+        "arcade",
+        "meditative"
+      ],
+      "accent": "#8ab4ff",
+      "accent2": "#b388ff",
+      "bg": "#05070f",
+      "emoji": "♻️",
+      "date": "2026-08-18"
+    },
+    {
+      "id": "wild-signal-box",
+      "slug": "2026-08-18-wild-signal-box",
+      "title": "Wild Signal Box",
+      "tagline": "Reflexes required.",
+      "description": "Wild Signal Box — a arctic aurora junction signal control game. You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash.",
+      "genre": "simulation",
+      "mechanic": "junction signal control",
+      "theme": "arctic aurora",
+      "tags": [
+        "simulation",
+        "traffic",
+        "arcade",
+        "meditative"
+      ],
+      "accent": "#e879f9",
+      "accent2": "#38bdf8",
+      "bg": "#0a0416",
+      "emoji": "🚦",
+      "date": "2026-08-18"
+    },
+    {
       "id": "velvet-rift",
       "slug": "2026-08-18-velvet-rift",
       "title": "Velvet Rift",

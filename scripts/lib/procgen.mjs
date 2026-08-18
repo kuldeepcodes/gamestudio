@@ -146,12 +146,12 @@ function buildLane(engine, P) {
 
 function buildPaddle(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
-  var paddle, ball, bricks, t, wave;
+  var paddle, ball, bricks, t, wave, serveT;
   function makeBricks() {
     bricks = []; wave++; var cols = P.cols, rows = Math.min(P.rowsMax, 2 + wave), gap = 6, bw = (W - gap * (cols + 1)) / cols, bh = P.bh;
     for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) bricks.push({ x: gap + c * (bw + gap), y: 44 + r * (bh + gap), w: bw, h: bh });
   }
-  function reset() { paddle = { x: W / 2, w: P.pw }; ball = { x: W / 2, y: H * 0.6, vx: P.bspeed * (engine.chance(0.5) ? 1 : -1), vy: -P.bspeed, r: P.br }; t = 0; wave = 0; makeBricks(); }
+  function reset() { paddle = { x: W / 2, w: P.pw }; ball = { x: W / 2, y: H * 0.6, vx: P.bspeed * (engine.chance(0.5) ? 1 : -1), vy: -P.bspeed, r: P.br }; t = 0; wave = 0; serveT = P.serve; makeBricks(); }
   function over() { S.hit(); engine.shake(16); engine.particles.burst(ball.x, ball.y, { count: 30, color: P.hazard, speed: 200, life: 0.6, gravity: 120 }); engine.gameOver(); }
   return {
     setup: reset, reset: reset,
@@ -160,6 +160,14 @@ function buildPaddle(engine, P) {
       if (input.pointer.down) paddle.x = input.pointer.x;
       var d = input.dir().x; if (d) paddle.x += d * P.pspeed * dt;
       paddle.x = engine.clamp(paddle.x, paddle.w / 2, W - paddle.w / 2);
+      // the ball rests on the paddle briefly at the start of a run so the player can
+      // orient before it launches (a stationary paddle otherwise loses in under 2s)
+      if (serveT > 0) {
+        serveT -= dt;
+        ball.x = paddle.x; ball.y = H - P.pmargin - ball.r - 4;
+        if (serveT <= 0) { ball.vy = -Math.abs(P.bspeed); ball.vx = P.bspeed * (engine.chance(0.5) ? 0.6 : -0.6); S.jump(); }
+        return;
+      }
       var speed = 1 + t * P.ramp;
       ball.x += ball.vx * dt * speed; ball.y += ball.vy * dt * speed;
       if (ball.x < ball.r) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
@@ -264,6 +272,397 @@ function buildReflex(engine, P) {
   };
 }
 
+// ---------- real-world scenario builders ----------
+// These model everyday situations (a sorting line, a lift, an intersection, a coffee bar)
+// rather than abstract arcade shapes, so the gallery reads as small simulations.
+
+function buildSorter(engine, P) {
+  var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
+  var items, sel, strikes, t, spawnT, pops;
+  var binH = 92, binY = H - binH - 26;
+  function bin(i) { var bw = (W - 32) / P.cats.length; return { x: 16 + i * bw + 4, y: binY, w: bw - 8, h: binH }; }
+  function reset() { items = []; sel = P.cats.length >> 1; strikes = 0; t = 0; spawnT = 0.5; pops = []; }
+  return {
+    setup: reset, reset: reset,
+    update: function (dt) {
+      t += dt;
+      if (input.justPressed("left")) { sel = (sel + P.cats.length - 1) % P.cats.length; S.blip(); }
+      if (input.justPressed("right")) { sel = (sel + 1) % P.cats.length; S.blip(); }
+      var sw = input.consumeSwipe();
+      if (sw === "left") { sel = (sel + P.cats.length - 1) % P.cats.length; S.blip(); }
+      else if (sw === "right") { sel = (sel + 1) % P.cats.length; S.blip(); }
+      if (input.pointer.justDown) {
+        for (var b = 0; b < P.cats.length; b++) {
+          var r = bin(b);
+          if (input.pointer.x >= r.x && input.pointer.x <= r.x + r.w && input.pointer.y >= r.y - 40) { sel = b; S.blip(); }
+        }
+      }
+      var speed = P.fall + t * P.ramp;
+      var target = bin(sel);
+      for (var i = items.length - 1; i >= 0; i--) {
+        var it = items[i];
+        it.x += ((target.x + target.w / 2) - it.x) * Math.min(1, dt * P.steer);
+        it.y += speed * dt; it.rot += it.spin * dt;
+        if (it.y >= binY + 8) {
+          if (it.cat === sel) {
+            engine.addScore(10); S.coin();
+            engine.particles.burst(it.x, binY, { count: 16, color: P.cats[it.cat].c, speed: 170, life: 0.5, gravity: 120 });
+            pops.push({ x: it.x, y: binY, life: 0.5, ok: 1 });
+          } else {
+            strikes++; S.hit(); engine.shake(14);
+            engine.particles.burst(it.x, binY, { count: 20, color: P.hazard, speed: 190, life: 0.55, gravity: 140 });
+            pops.push({ x: it.x, y: binY, life: 0.5, ok: 0 });
+          }
+          items.splice(i, 1);
+          if (strikes >= P.maxStrikes) { S.over(); engine.gameOver(); return; }
+        }
+      }
+      spawnT -= dt;
+      if (spawnT <= 0) { items.push({ x: W / 2, y: -34, cat: engine.randInt(0, P.cats.length - 1), rot: 0, spin: engine.rand(-1.5, 1.5) }); spawnT = Math.max(0.42, P.spawn - t * 0.012); }
+      for (var p = pops.length - 1; p >= 0; p--) { pops[p].life -= dt; if (pops[p].life <= 0) pops.splice(p, 1); }
+    },
+    render: function (ctx) {
+      ctx.strokeStyle = "rgba(255,255,255,.09)"; ctx.lineWidth = 2;
+      for (var g = 0; g < 8; g++) {
+        var gy = ((t * 70 + g * 58) % (binY + 60)) - 30;
+        ctx.beginPath(); ctx.moveTo(W / 2 - 74, gy); ctx.lineTo(W / 2 + 74, gy); ctx.stroke();
+      }
+      ctx.strokeStyle = "rgba(255,255,255,.16)";
+      ctx.beginPath(); ctx.moveTo(W / 2 - 78, -10); ctx.lineTo(W / 2 - 78, binY - 40); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W / 2 + 78, -10); ctx.lineTo(W / 2 + 78, binY - 40); ctx.stroke();
+      for (var b = 0; b < P.cats.length; b++) {
+        var r = bin(b), c = P.cats[b].c, on = b === sel;
+        ctx.save();
+        ctx.shadowColor = c; ctx.shadowBlur = on ? 22 : 0;
+        ctx.fillStyle = on ? "rgba(255,255,255,.10)" : "rgba(255,255,255,.04)";
+        ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.fill();
+        ctx.strokeStyle = c; ctx.lineWidth = on ? 4 : 2; ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = c; ctx.textAlign = "center";
+        ctx.font = "bold 14px system-ui, -apple-system, Segoe UI, sans-serif";
+        ctx.fillText(P.cats[b].n, r.x + r.w / 2, r.y + r.h / 2 + 5);
+      }
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i], cc = P.cats[it.cat];
+        ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot);
+        ctx.shadowColor = cc.c; ctx.shadowBlur = 16; ctx.fillStyle = cc.c;
+        ctx.beginPath(); ctx.rect(-P.itemR, -P.itemR, P.itemR * 2, P.itemR * 2); ctx.fill();
+        ctx.shadowBlur = 0; ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.textAlign = "center";
+        ctx.font = "bold 13px system-ui, -apple-system, Segoe UI, sans-serif";
+        ctx.fillText(cc.n.charAt(0), 0, 5);
+        ctx.restore();
+      }
+      for (var p = 0; p < pops.length; p++) {
+        var q = pops[p];
+        ctx.globalAlpha = Math.max(0, q.life * 2);
+        ctx.fillStyle = q.ok ? P.accent : P.hazard; ctx.textAlign = "center";
+        ctx.font = "bold 20px system-ui, -apple-system, Segoe UI, sans-serif";
+        ctx.fillText(q.ok ? "+10" : "MISSORT", q.x, q.y - 26 - (0.5 - q.life) * 30);
+        ctx.globalAlpha = 1;
+      }
+      for (var s = 0; s < P.maxStrikes; s++) {
+        ctx.strokeStyle = s < strikes ? P.hazard : "rgba(255,255,255,.18)"; ctx.lineWidth = 3;
+        var sx = W - 26 - s * 22, sy = 22;
+        ctx.beginPath(); ctx.moveTo(sx - 6, sy - 6); ctx.lineTo(sx + 6, sy + 6);
+        ctx.moveTo(sx + 6, sy - 6); ctx.lineTo(sx - 6, sy + 6); ctx.stroke();
+      }
+    }
+  };
+}
+
+function buildElevator(engine, P) {
+  var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
+  var car, waiting, riders, t, spawnT, served, doorT;
+  var top = 70, bot = H - 40;
+  function floorY(i) { return bot - (i + 0.5) * ((bot - top) / P.floors); }
+  function reset() {
+    car = { f: 0, y: floorY(0), moving: 0 }; waiting = []; riders = []; t = 0; spawnT = 0.8; served = 0; doorT = 0;
+    for (var i = 0; i < 2; i++) addRider();
+  }
+  function addRider() {
+    var f = engine.randInt(0, P.floors - 1), d = engine.randInt(0, P.floors - 1);
+    if (d === f) d = (f + 1) % P.floors;
+    waiting.push({ f: f, dest: d, pat: P.patience, max: P.patience });
+  }
+  return {
+    setup: reset, reset: reset,
+    update: function (dt) {
+      t += dt;
+      var d = input.dir(), want = car.f;
+      if (input.justPressed("up") || d.y < 0) want = car.f + 1;
+      if (input.justPressed("down") || d.y > 0) want = car.f - 1;
+      var sw = input.consumeSwipe();
+      if (sw === "up") want = car.f + 1; else if (sw === "down") want = car.f - 1;
+      if (input.pointer.justDown) { want = car.f + (input.pointer.y < car.y - 18 ? 1 : (input.pointer.y > car.y + 18 ? -1 : 0)); }
+      want = Math.round(engine.clamp(want, 0, P.floors - 1));
+      if (want !== car.f && doorT <= 0) { car.f = want; S.blip(); }
+
+      var ty = floorY(car.f);
+      car.y += (ty - car.y) * Math.min(1, dt * P.carSpeed);
+      var atFloor = Math.abs(car.y - ty) < 4;
+
+      if (atFloor) {
+        for (var r = riders.length - 1; r >= 0; r--) {
+          if (riders[r].dest === car.f) {
+            riders.splice(r, 1); served++; engine.addScore(15); S.coin(); doorT = 0.25;
+            engine.particles.burst(W / 2, car.y, { count: 14, color: P.accent, speed: 150, life: 0.5, gravity: 40 });
+          }
+        }
+        for (var w = waiting.length - 1; w >= 0; w--) {
+          if (waiting[w].f === car.f && riders.length < P.capacity) {
+            riders.push({ dest: waiting[w].dest }); waiting.splice(w, 1); S.power(); doorT = 0.25;
+          }
+        }
+      }
+      if (doorT > 0) doorT -= dt;
+
+      for (var i = waiting.length - 1; i >= 0; i--) {
+        waiting[i].pat -= dt;
+        if (waiting[i].pat <= 0) { S.hit(); engine.shake(16); engine.particles.burst(40, floorY(waiting[i].f), { count: 18, color: P.hazard, speed: 160, life: 0.6 }); S.over(); engine.gameOver(); return; }
+      }
+      spawnT -= dt;
+      if (spawnT <= 0 && waiting.length < P.maxWaiting) { addRider(); spawnT = Math.max(0.9, P.spawn - t * 0.02); }
+    },
+    render: function (ctx) {
+      var shaftX = W / 2 - P.shaftW / 2;
+      for (var f = 0; f < P.floors; f++) {
+        var y = floorY(f);
+        ctx.strokeStyle = "rgba(255,255,255,.10)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(24, y + 26); ctx.lineTo(W - 24, y + 26); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,.30)"; ctx.textAlign = "left";
+        ctx.font = "600 12px system-ui, -apple-system, Segoe UI, sans-serif";
+        ctx.fillText("L" + (f + 1), 26, y + 4);
+      }
+      ctx.fillStyle = "rgba(255,255,255,.05)";
+      ctx.beginPath(); ctx.rect(shaftX, top - 30, P.shaftW, bot - top + 40); ctx.fill();
+
+      for (var i = 0; i < waiting.length; i++) {
+        var p = waiting[i], py = floorY(p.f), px = shaftX - 30 - (i % 3) * 20;
+        var frac = Math.max(0, p.pat / p.max);
+        ctx.fillStyle = frac < 0.3 ? P.hazard : P.accent2;
+        ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.arc(px, py, 9, 0, 6.283); ctx.fill(); ctx.shadowBlur = 0;
+        ctx.strokeStyle = frac < 0.3 ? P.hazard : P.accent; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(px, py, 14, -1.5708, -1.5708 + 6.283 * frac); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.textAlign = "center";
+        ctx.font = "bold 10px system-ui, -apple-system, Segoe UI, sans-serif";
+        ctx.fillText(String(p.dest + 1), px, py + 3);
+      }
+      ctx.save();
+      ctx.shadowColor = P.accent; ctx.shadowBlur = 18;
+      ctx.fillStyle = "rgba(255,255,255,.12)";
+      ctx.beginPath(); ctx.rect(shaftX + 4, car.y - 26, P.shaftW - 8, 52); ctx.fill();
+      ctx.strokeStyle = P.accent; ctx.lineWidth = 3; ctx.stroke();
+      ctx.restore();
+      var gap = doorT > 0 ? (P.shaftW - 8) / 2 - 4 : 2;
+      ctx.fillStyle = "rgba(255,255,255,.22)";
+      ctx.beginPath(); ctx.rect(shaftX + 4, car.y - 26, gap, 52); ctx.fill();
+      ctx.beginPath(); ctx.rect(shaftX + P.shaftW - 4 - gap, car.y - 26, gap, 52); ctx.fill();
+      for (var r = 0; r < riders.length; r++) {
+        ctx.fillStyle = P.accent2;
+        ctx.beginPath(); ctx.arc(shaftX + 16 + r * 16, car.y + 4, 6, 0, 6.283); ctx.fill();
+      }
+      ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.textAlign = "right";
+      ctx.font = "600 12px system-ui, -apple-system, Segoe UI, sans-serif";
+      ctx.fillText("delivered " + served, W - 24, 22);
+    }
+  };
+}
+
+function buildTraffic(engine, P) {
+  var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
+  var cars, greenNS, t, spawnT, passed, switchLock;
+  var cx = W / 2, cy = H / 2, half = P.roadW / 2;
+  function reset() { cars = []; greenNS = true; t = 0; spawnT = 0.7; passed = 0; switchLock = 0; }
+  function inBox(c) { return c.x > cx - half - 16 && c.x < cx + half + 16 && c.y > cy - half - 16 && c.y < cy + half + 16; }
+  return {
+    setup: reset, reset: reset,
+    update: function (dt) {
+      t += dt;
+      if (switchLock > 0) switchLock -= dt;
+      var toggle = input.justPressed("action") || input.pointer.justDown ||
+        input.justPressed("left") || input.justPressed("right") || input.justPressed("up") || input.justPressed("down");
+      if (toggle && switchLock <= 0) { greenNS = !greenNS; S.tick(); switchLock = P.switchLock; }
+
+      var speed = P.carSpeed + t * P.ramp;
+      for (var i = cars.length - 1; i >= 0; i--) {
+        var c = cars[i];
+        var isNS = c.dir === 0 || c.dir === 2;
+        var green = isNS === greenNS;
+        // distance to the stop line for this approach
+        var toStop;
+        if (c.dir === 0) toStop = (cy - half - 18) - c.y;
+        else if (c.dir === 2) toStop = c.y - (cy + half + 18);
+        else if (c.dir === 1) toStop = c.x - (cx + half + 18);
+        else toStop = (cx - half - 18) - c.x;
+
+        var blocked = false;
+        if (!green && toStop > 0 && toStop < 6) blocked = true;
+        // queue behind the car ahead
+        for (var j = 0; j < cars.length; j++) {
+          var o = cars[j];
+          if (o === c || o.dir !== c.dir) continue;
+          if (isNS) { if (c.dir === 0 && o.y > c.y && o.y - c.y < 34) blocked = true; if (c.dir === 2 && o.y < c.y && c.y - o.y < 34) blocked = true; }
+          else { if (c.dir === 1 && o.x < c.x && c.x - o.x < 34) blocked = true; if (c.dir === 3 && o.x > c.x && o.x - c.x < 34) blocked = true; }
+        }
+        if (!blocked) {
+          if (c.dir === 0) c.y += speed * dt; else if (c.dir === 2) c.y -= speed * dt;
+          else if (c.dir === 1) c.x -= speed * dt; else c.x += speed * dt;
+          c.wait = 0;
+        } else { c.wait += dt; if (c.wait > P.patience) { S.hit(); engine.shake(16); S.over(); engine.gameOver(); return; } }
+
+        if (c.x < -60 || c.x > W + 60 || c.y < -60 || c.y > H + 60) { cars.splice(i, 1); passed++; engine.addScore(5); continue; }
+      }
+      // collision: two cars from crossing axes inside the junction
+      for (var a = 0; a < cars.length; a++) {
+        if (!inBox(cars[a])) continue;
+        for (var b = a + 1; b < cars.length; b++) {
+          if (!inBox(cars[b])) continue;
+          var aNS = cars[a].dir === 0 || cars[a].dir === 2, bNS = cars[b].dir === 0 || cars[b].dir === 2;
+          if (aNS !== bNS && engine.dist(cars[a].x, cars[a].y, cars[b].x, cars[b].y) < 30) {
+            S.hit(); engine.shake(26);
+            engine.particles.burst((cars[a].x + cars[b].x) / 2, (cars[a].y + cars[b].y) / 2, { count: 40, color: P.hazard, speed: 260, life: 0.8, gravity: 60 });
+            S.over(); engine.gameOver(); return;
+          }
+        }
+      }
+      spawnT -= dt;
+      if (spawnT <= 0 && cars.length < P.maxCars) {
+        var dir = engine.randInt(0, 3), c2 = { dir: dir, wait: 0, hue: engine.chance(0.5) ? P.accent : P.accent2 };
+        if (dir === 0) { c2.x = cx - 16; c2.y = -40; } else if (dir === 2) { c2.x = cx + 16; c2.y = H + 40; }
+        else if (dir === 1) { c2.x = W + 40; c2.y = cy - 16; } else { c2.x = -40; c2.y = cy + 16; }
+        var tooClose = false;
+        for (var k = 0; k < cars.length; k++) { if (cars[k].dir === dir && engine.dist(cars[k].x, cars[k].y, c2.x, c2.y) < 46) tooClose = true; }
+        if (!tooClose) cars.push(c2);
+        spawnT = Math.max(0.42, P.spawn - t * 0.014);
+      }
+    },
+    render: function (ctx) {
+      ctx.fillStyle = "rgba(255,255,255,.05)";
+      ctx.beginPath(); ctx.rect(cx - half, 0, P.roadW, H); ctx.fill();
+      ctx.beginPath(); ctx.rect(0, cy - half, W, P.roadW); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.lineWidth = 2;
+      for (var d = 0; d < 14; d++) {
+        var yy = d * 44 + 10;
+        if (yy < cy - half - 10 || yy > cy + half + 10) { ctx.beginPath(); ctx.moveTo(cx, yy); ctx.lineTo(cx, yy + 20); ctx.stroke(); }
+        var xx = d * 44 + 10;
+        if (xx < cx - half - 10 || xx > cx + half + 10) { ctx.beginPath(); ctx.moveTo(xx, cy); ctx.lineTo(xx + 20, cy); ctx.stroke(); }
+      }
+      for (var i = 0; i < cars.length; i++) {
+        var c = cars[i], ns = c.dir === 0 || c.dir === 2;
+        ctx.save(); ctx.translate(c.x, c.y);
+        ctx.shadowColor = c.hue; ctx.shadowBlur = 12; ctx.fillStyle = c.hue;
+        ctx.beginPath();
+        if (ns) ctx.rect(-11, -17, 22, 34); else ctx.rect(-17, -11, 34, 22);
+        ctx.fill(); ctx.restore();
+      }
+      // signal heads
+      var g1 = greenNS ? "#4ade80" : P.hazard, g2 = greenNS ? P.hazard : "#4ade80";
+      ctx.save();
+      ctx.shadowBlur = 16; ctx.shadowColor = g1; ctx.fillStyle = g1;
+      ctx.beginPath(); ctx.arc(cx - half - 20, cy - half - 20, 9, 0, 6.283); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + half + 20, cy + half + 20, 9, 0, 6.283); ctx.fill();
+      ctx.shadowColor = g2; ctx.fillStyle = g2;
+      ctx.beginPath(); ctx.arc(cx + half + 20, cy - half - 20, 9, 0, 6.283); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx - half - 20, cy + half + 20, 9, 0, 6.283); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.textAlign = "left";
+      ctx.font = "600 12px system-ui, -apple-system, Segoe UI, sans-serif";
+      ctx.fillText("cleared " + passed, 22, 22);
+    }
+  };
+}
+
+function buildBarista(engine, P) {
+  var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
+  var order, step, timeLeft, t, done, flash, cupFill;
+  function btn(i) {
+    var n = P.ing.length, bw = (W - 40) / n;
+    return { x: 20 + i * bw + 4, y: H - 118, w: bw - 8, h: 92 };
+  }
+  function newOrder() {
+    var len = engine.randInt(P.minLen, P.maxLen), o = [];
+    for (var i = 0; i < len; i++) o.push(engine.randInt(0, P.ing.length - 1));
+    order = o; step = 0; timeLeft = P.time + len * P.perItem; cupFill = 0;
+  }
+  function reset() { t = 0; done = 0; flash = 0; newOrder(); }
+  return {
+    setup: reset, reset: reset,
+    update: function (dt) {
+      t += dt; timeLeft -= dt; if (flash > 0) flash -= dt;
+      if (timeLeft <= 0) { S.hit(); engine.shake(18); S.over(); engine.gameOver(); return; }
+      var hit = -1;
+      if (input.pointer.justDown) {
+        for (var i = 0; i < P.ing.length; i++) {
+          var r = btn(i);
+          if (input.pointer.x >= r.x && input.pointer.x <= r.x + r.w && input.pointer.y >= r.y - 10) hit = i;
+        }
+      }
+      if (input.justPressed("left")) hit = 0;
+      if (input.justPressed("down")) hit = Math.min(1, P.ing.length - 1);
+      if (input.justPressed("right")) hit = Math.min(2, P.ing.length - 1);
+      if (input.justPressed("up")) hit = Math.min(3, P.ing.length - 1);
+      if (hit < 0) return;
+      if (hit === order[step]) {
+        step++; S.blip(); cupFill = step / order.length;
+        engine.particles.burst(btn(hit).x + btn(hit).w / 2, btn(hit).y, { count: 10, color: P.ing[hit].c, speed: 130, life: 0.4, gravity: -30 });
+        if (step >= order.length) {
+          done++; engine.addScore(20 + Math.round(Math.max(0, timeLeft) * 2)); S.coin();
+          engine.particles.burst(W / 2, H / 2 - 40, { count: 26, color: P.accent, speed: 200, life: 0.7, gravity: 60 });
+          newOrder();
+        }
+      } else {
+        S.hit(); engine.shake(12); flash = 0.3; timeLeft -= P.penalty;
+        engine.particles.burst(btn(hit).x + btn(hit).w / 2, btn(hit).y, { count: 14, color: P.hazard, speed: 150, life: 0.45 });
+      }
+    },
+    render: function (ctx) {
+      ctx.fillStyle = "rgba(255,255,255,.06)";
+      ctx.beginPath(); ctx.rect(24, 56, W - 48, 96); ctx.fill();
+      ctx.strokeStyle = flash > 0 ? P.hazard : "rgba(255,255,255,.18)"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,.45)"; ctx.textAlign = "left";
+      ctx.font = "600 12px system-ui, -apple-system, Segoe UI, sans-serif";
+      ctx.fillText("ORDER #" + (done + 1), 38, 78);
+      for (var i = 0; i < order.length; i++) {
+        var g = P.ing[order[i]], bx = 40 + i * 46, by = 108, on = i < step;
+        ctx.save();
+        ctx.globalAlpha = on ? 0.35 : 1; ctx.shadowColor = g.c; ctx.shadowBlur = on ? 0 : 12;
+        ctx.fillStyle = g.c; ctx.beginPath(); ctx.arc(bx, by, 15, 0, 6.283); ctx.fill();
+        ctx.restore();
+        if (on) { ctx.strokeStyle = P.accent; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bx - 7, by); ctx.lineTo(bx - 2, by + 6); ctx.lineTo(bx + 8, by - 6); ctx.stroke(); }
+      }
+      var frac = Math.max(0, Math.min(1, timeLeft / (P.time + order.length * P.perItem)));
+      ctx.fillStyle = "rgba(255,255,255,.10)";
+      ctx.beginPath(); ctx.rect(24, 168, W - 48, 8); ctx.fill();
+      ctx.fillStyle = frac < 0.25 ? P.hazard : P.accent;
+      ctx.beginPath(); ctx.rect(24, 168, (W - 48) * frac, 8); ctx.fill();
+
+      var cupW = 96, cupH = 116, cxx = W / 2 - cupW / 2, cyy = H / 2 - 30;
+      ctx.fillStyle = "rgba(255,255,255,.05)";
+      ctx.beginPath(); ctx.rect(cxx, cyy, cupW, cupH); ctx.fill();
+      ctx.fillStyle = P.accent2; ctx.globalAlpha = 0.85;
+      ctx.beginPath(); ctx.rect(cxx + 4, cyy + cupH - 4 - (cupH - 8) * cupFill, cupW - 8, (cupH - 8) * cupFill); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = P.accent; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.rect(cxx, cyy, cupW, cupH); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cxx + cupW + 14, cyy + 40, 18, -1.2, 1.2); ctx.stroke();
+
+      for (var b = 0; b < P.ing.length; b++) {
+        var r = btn(b), c = P.ing[b].c;
+        ctx.save(); ctx.shadowColor = c; ctx.shadowBlur = 14;
+        ctx.fillStyle = "rgba(255,255,255,.06)";
+        ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.fill();
+        ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+        ctx.fillStyle = c;
+        ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + 32, 13, 0, 6.283); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,.72)"; ctx.textAlign = "center";
+        ctx.font = "600 11px system-ui, -apple-system, Segoe UI, sans-serif";
+        ctx.fillText(P.ing[b].n, r.x + r.w / 2, r.y + 68);
+      }
+    }
+  };
+}
+
 // ---------- variation ----------
 
 // Per-archetype jitter ranges. Two games of the same archetype should still *play*
@@ -275,7 +674,11 @@ const JITTER = {
   lane: { fall: [0.85, 1.35], spawn: [0.75, 1.25], badChance: [0.75, 1.25], itemR: [0.85, 1.15], pr: [0.88, 1.15], slide: [0.80, 1.30] },
   paddle: { bspeed: [0.85, 1.25], pw: [0.75, 1.25], cols: [0.80, 1.40], rowsMax: [0.70, 1.50], bh: [0.88, 1.18], pspeed: [0.85, 1.20], br: [0.85, 1.25] },
   stacker: { speed: [0.78, 1.40], startW: [0.78, 1.25], bh: [0.85, 1.20], rampPx: [0.70, 1.50] },
-  reflex: { life: [0.82, 1.22], spawn: [0.75, 1.30], tr: [0.85, 1.25], badChance: [0.75, 1.35], maxMiss: [0.80, 1.40] }
+  reflex: { life: [0.82, 1.22], spawn: [0.75, 1.30], tr: [0.85, 1.25], badChance: [0.75, 1.35], maxMiss: [0.80, 1.40] },
+  sorter: { fall: [0.82, 1.28], spawn: [0.78, 1.25], steer: [0.80, 1.30], itemR: [0.88, 1.15], ramp: [0.70, 1.40] },
+  elevator: { carSpeed: [0.85, 1.25], patience: [0.82, 1.20], spawn: [0.78, 1.25], floors: [0.85, 1.25], capacity: [0.80, 1.40] },
+  traffic: { carSpeed: [0.85, 1.25], spawn: [0.78, 1.28], patience: [0.85, 1.25], roadW: [0.88, 1.15], maxCars: [0.80, 1.30] },
+  barista: { perItem: [0.85, 1.22], time: [0.85, 1.25], penalty: [0.80, 1.30], maxLen: [0.85, 1.25] }
 };
 
 // Scale numeric params in place. Integers stay integers, signs are preserved (flap is
@@ -298,6 +701,9 @@ function jitterParams(key, P, rng) {
   if (typeof out.foeMin === "number" && typeof out.foeMax === "number" && out.foeMin > out.foeMax) {
     const t = out.foeMin; out.foeMin = out.foeMax; out.foeMax = t;
   }
+  if (typeof out.minLen === "number" && typeof out.maxLen === "number" && out.maxLen < out.minLen) out.maxLen = out.minLen;
+  if (typeof out.floors === "number") out.floors = Math.max(3, Math.min(7, out.floors));
+  if (typeof out.capacity === "number") out.capacity = Math.max(1, Math.min(4, out.capacity));
   return out;
 }
 
@@ -342,7 +748,7 @@ const ARCH = [
     build: buildPaddle, nouns: ["Breaker", "Rebound", "Volley", "Deflect", "Bricks", "Bounce"],
     controls: "Drag / Arrows to move the paddle",
     how: "Bounce the ball to shatter every brick. Clear a wave and a denser one drops. Miss the ball and it's over.",
-    params: (b) => ({ pw: 118, pspeed: 620, pmargin: 40, br: 9, bspeed: 300 + b.fast * 60, ramp: 0.03, cols: 8, rowsMax: 6, bh: 20, accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD })
+    params: (b) => ({ pw: 118, pspeed: 620, pmargin: 40, br: 9, bspeed: 300 + b.fast * 60, ramp: 0.03, cols: 8, rowsMax: 6, bh: 20, serve: 1.1, accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD })
   },
   {
     key: "stacker", genre: "timing", mechanic: "precision block stacking", emoji: "\uD83C\uDFD7\uFE0F", orient: "portrait",
@@ -357,6 +763,47 @@ const ARCH = [
     controls: "Tap / Click the good rings",
     how: "Tap the glowing rings before they fade. Never tap a crossed one, and don't let too many good ones slip away.",
     params: (b) => ({ tr: 34, life: 1.7 - b.fast * 0.3, spawn: 0.8 - b.fast * 0.15, badChance: 0.28, maxMiss: 5, accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD })
+  },
+  {
+    key: "sorter", genre: "simulation", mechanic: "recycling line sorting", emoji: "\u267B\uFE0F", orient: "portrait",
+    build: buildSorter, nouns: ["Sorting Line", "Recycling Run", "Waste Shift", "Depot", "Materials Yard", "Sorting Plant"],
+    controls: "Tap a bin / Arrows to steer the chute",
+    how: "You're running the sorting line at a recycling plant. Steer each item down the chute into the matching bin \u2014 three missorts and the line shuts down.",
+    params: (b) => ({
+      fall: 150 + b.fast * 60, ramp: 5, steer: 8, spawn: 1.1 - b.fast * 0.2, itemR: 17, maxStrikes: 3,
+      cats: [{ n: "PAPER", c: b.pal.accent }, { n: "GLASS", c: b.pal.accent2 }, { n: "METAL", c: "#f6c453" }],
+      accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD
+    })
+  },
+  {
+    key: "elevator", genre: "simulation", mechanic: "elevator dispatch", emoji: "\uD83D\uDED7", orient: "portrait",
+    build: buildElevator, nouns: ["Tower Shift", "Lift Duty", "High Rise", "Service Call", "The Lobby", "Night Shift"],
+    controls: "Up/Down arrows, swipe, or tap above/below the car",
+    how: "You're the lift operator in a busy tower. Collect waiting people and drop them at their floor before anyone's patience runs out.",
+    params: (b) => ({
+      floors: 5, carSpeed: 6 + b.fast * 3, capacity: 3, patience: 13 - b.fast * 3, spawn: 3.4 - b.fast * 0.8,
+      maxWaiting: 6, shaftW: 74, accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD
+    })
+  },
+  {
+    key: "traffic", genre: "simulation", mechanic: "junction signal control", emoji: "\uD83D\uDEA6", orient: "any",
+    build: buildTraffic, nouns: ["Junction", "Rush Hour", "Crossroads", "Gridlock", "Signal Box", "Downtown"],
+    controls: "Tap / Space to switch the lights",
+    how: "You control the lights at a busy crossroads. Switch which road gets the green \u2014 let two streams into the junction at once and they crash.",
+    params: (b) => ({
+      roadW: 86, carSpeed: 105 + b.fast * 45, ramp: 3, spawn: 1.25 - b.fast * 0.25, patience: 7 - b.fast * 1.5,
+      maxCars: 14, switchLock: 0.45, accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD
+    })
+  },
+  {
+    key: "barista", genre: "simulation", mechanic: "cafe order assembly", emoji: "\u2615", orient: "portrait",
+    build: buildBarista, nouns: ["Morning Rush", "Espresso Bar", "The Counter", "Open Late", "Corner Cafe", "Last Order"],
+    controls: "Tap the ingredients / Arrow keys",
+    how: "You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks.",
+    params: (b) => ({
+      ing: [{ n: "ESPRESSO", c: "#c98a5b" }, { n: "MILK", c: "#f4f1ea" }, { n: "SYRUP", c: b.pal.accent }, { n: "FOAM", c: b.pal.accent2 }],
+      minLen: 2, maxLen: 5, time: 3.2, perItem: 1.5 - b.fast * 0.3, penalty: 1.1, accent: b.pal.accent, accent2: b.pal.accent2, hazard: HAZARD
+    })
   }
 ];
 

@@ -1,0 +1,28 @@
+{
+  "id": "feral-espresso-bar",
+  "slug": "2026-08-18-feral-espresso-bar",
+  "title": "Feral Espresso Bar",
+  "tagline": "Don't blink.",
+  "description": "Feral Espresso Bar — a desert mirage cafe order assembly game. You're on bar during the morning rush. Build each drink by adding its ingredients in the exact order on the ticket, before the customer walks.",
+  "genre": "simulation",
+  "mechanic": "cafe order assembly",
+  "theme": "desert mirage",
+  "tags": [
+    "simulation",
+    "barista",
+    "arcade",
+    "playful"
+  ],
+  "accent": "#5eead4",
+  "accent2": "#fca5a5",
+  "bg": "#04140f",
+  "emoji": "☕",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "balance / tightrope",
+    "theme": "desert mirage",
+    "twist": "controls invert every few seconds",
+    "mood": "playful"
+  }
+}
