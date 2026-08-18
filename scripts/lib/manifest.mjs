@@ -19,10 +19,11 @@ export function slugify(s) {
     .trim().replace(/[\s_]+/g, "-").replace(/-+/g, "-").slice(0, 40) || "game";
 }
 
-export function uniqueSlug(root, dateStr, title) {
+export function uniqueSlug(root, dateStr, title, taken) {
   const base = dateStr + "-" + slugify(title);
+  const busy = taken instanceof Set ? taken : new Set(taken || []);
   let slug = base, n = 2;
-  while (fs.existsSync(path.join(root, "games", slug))) { slug = base + "-" + n++; }
+  while (fs.existsSync(path.join(root, "games", slug)) || busy.has(slug)) { slug = base + "-" + n++; }
   return slug;
 }
 

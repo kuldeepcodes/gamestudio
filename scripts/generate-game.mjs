@@ -7,6 +7,7 @@
 // guaranteed fallback. Either way the game must pass a headless smoke test before a PR opens.
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { buildGame, readMeta } from "./build-game.mjs";
 import { smoke } from "./lib/smoke.mjs";
@@ -27,14 +28,42 @@ function ghOutput(kv) {
   fs.appendFileSync(f, Object.entries(kv).map(([k, v]) => `${k}=${v}`).join("\n") + "\n");
 }
 
+// Games sitting in unmerged `game/*` PR branches are not in main's games.json, so without
+// this the next hourly run sees an unchanged gallery and picks the same most-overdue
+// archetype again — producing near-identical drops whenever PRs aren't merged promptly.
+// Read those branches' manifests so pending games still count for rotation and naming.
+function pendingEntries(existingSlugs) {
+  const out = [];
+  try {
+    const refs = execFileSync("git", ["for-each-ref", "--format=%(refname)", "refs/remotes/origin/game/"], { cwd: ROOT, encoding: "utf8" })
+      .split("\n").map((s) => s.trim()).filter(Boolean);
+    for (const ref of refs) {
+      try {
+        const raw = execFileSync("git", ["show", `${ref}:games.json`], { cwd: ROOT, encoding: "utf8", maxBuffer: 8 * 1024 * 1024 });
+        for (const g of (JSON.parse(raw).games || [])) {
+          if (!g || !g.slug) continue;
+          if (existingSlugs.has(g.slug) || out.some((o) => o.slug === g.slug)) continue;
+          out.push(g);
+        }
+      } catch (e) { /* branch without a readable manifest — skip */ }
+    }
+  } catch (e) { /* not a git checkout, or no such refs — fall back to main only */ }
+  return out;
+}
+
 async function main() {
   const apiRef = fs.readFileSync(path.join(ROOT, "engine", "api.md"), "utf8");
   let example = "window.GAME = { meta:{title:'Example'}, create:function(){ return { setup(){}, update(){}, render(){} }; } };";
   try { example = fs.readFileSync(path.join(ROOT, "games", "2026-08-18-voidfall", "game.js"), "utf8"); } catch (e) {}
 
   const manifest = readManifest(ROOT);
+  const shipped = manifest.games || [];
+  // include games waiting in unmerged PR branches so rotation keeps advancing
+  const pending = pendingEntries(new Set(shipped.map((g) => g.slug)));
+  if (pending.length) log(`Found ${pending.length} game(s) in open PR branches — counting them for rotation: ${pending.map((p) => p.title).join(", ")}`);
+  const known = pending.concat(shipped);
   const seed = process.env.GS_SEED ? Number(process.env.GS_SEED) >>> 0 : Date.now() >>> 0;
-  const brief = buildBrief(manifest.games || [], seed);
+  const brief = buildBrief(known, seed);
   log(`Brief: ${brief.genre} · ${brief.theme} · twist="${brief.twist}" · ${brief.mood} · ${brief.orientation}`);
 
   const tmpDir = path.join(ROOT, "games", "__wip__");
@@ -86,7 +115,7 @@ async function main() {
   }
 
   const date = todayUTC();
-  const slug = uniqueSlug(ROOT, date, meta.title);
+  const slug = uniqueSlug(ROOT, date, meta.title, new Set(pending.map((p) => p.slug)));
   const dir = path.join(ROOT, "games", slug);
   fs.renameSync(tmpDir, dir);
   buildGame(dir);

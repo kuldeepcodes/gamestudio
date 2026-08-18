@@ -1,0 +1,28 @@
+{
+  "id": "turbo-skip",
+  "slug": "2026-08-18-turbo-skip",
+  "title": "Turbo Skip",
+  "tagline": "One more run.",
+  "description": "Turbo Skip — a haunted neon tap-to-flap through gaps game. Tap (or Space) to flap and thread every gap. Touch a wall or the floor and you're done.",
+  "genre": "reflex",
+  "mechanic": "tap-to-flap through gaps",
+  "theme": "haunted neon",
+  "tags": [
+    "reflex",
+    "flapper",
+    "arcade",
+    "frantic"
+  ],
+  "accent": "#5eead4",
+  "accent2": "#fca5a5",
+  "bg": "#04140f",
+  "emoji": "🪽",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "tile flipping",
+    "theme": "haunted neon",
+    "twist": "light fades and you must relight it",
+    "mood": "frantic"
+  }
+}

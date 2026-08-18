@@ -33,6 +33,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Games awaiting review live only on their own branches. Fetch them so the
+      # generator can count them and keep rotating instead of repeating an archetype.
+      - name: Fetch pending game branches
+        run: git fetch --no-tags --depth=1 origin "+refs/heads/game/*:refs/remotes/origin/game/*" || true
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
