@@ -1,0 +1,28 @@
+{
+  "id": "circuit-vortex",
+  "slug": "2026-08-18-circuit-vortex",
+  "title": "Circuit Vortex",
+  "tagline": "Simple. Ruthless.",
+  "description": "Circuit Vortex — a circuit board omni-directional dodge & collect game. Glide to dodge the incoming shards and scoop the glowing motes. One hit and it's over.",
+  "genre": "survival",
+  "mechanic": "omni-directional dodge & collect",
+  "theme": "circuit board",
+  "tags": [
+    "survival",
+    "avoider",
+    "arcade",
+    "mysterious"
+  ],
+  "accent": "#22d3ee",
+  "accent2": "#818cf8",
+  "bg": "#020617",
+  "emoji": "🛸",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "physics toss",
+    "theme": "circuit board",
+    "twist": "two things must be controlled at once",
+    "mood": "mysterious"
+  }
+}

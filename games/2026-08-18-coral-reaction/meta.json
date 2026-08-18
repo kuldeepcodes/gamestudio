@@ -1,0 +1,28 @@
+{
+  "id": "coral-reaction",
+  "slug": "2026-08-18-coral-reaction",
+  "title": "Coral Reaction",
+  "tagline": "How long can you last?",
+  "description": "Coral Reaction — a coral reef color-target tap test game. Tap the glowing rings before they fade. Never tap a crossed one, and don't let too many good ones slip away.",
+  "genre": "reflex",
+  "mechanic": "color-target tap test",
+  "theme": "coral reef",
+  "tags": [
+    "reflex",
+    "reflex",
+    "arcade",
+    "meditative"
+  ],
+  "accent": "#e879f9",
+  "accent2": "#38bdf8",
+  "bg": "#0a0416",
+  "emoji": "🎯",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "orbit / gravity",
+    "theme": "coral reef",
+    "twist": "the world speeds up relentlessly",
+    "mood": "meditative"
+  }
+}

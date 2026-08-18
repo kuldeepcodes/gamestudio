@@ -2,7 +2,9 @@ name: Hourly game drop
 
 on:
   schedule:
-    - cron: "0 * * * *"      # every hour, on the hour (UTC)
+    - cron: "23 * * * *"     # every hour at :23 — deliberately off the top of the
+                             # hour, which is GitHub's most congested cron slot and
+                             # where scheduled runs are most often delayed or dropped.
   workflow_dispatch:
     inputs:
       model:
