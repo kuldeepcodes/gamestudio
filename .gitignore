@@ -1,0 +1,6 @@
+scripts/node_modules/
+node_modules/
+.gh_token
+.DS_Store
+games/__wip__/
+*.log

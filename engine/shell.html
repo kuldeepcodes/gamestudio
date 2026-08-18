@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"/>
+<meta name="theme-color" content="__BG__"/>
+<title>__TITLE__</title>
+<meta name="description" content="__DESC__"/>
+<meta property="og:title" content="__TITLE__"/>
+<meta property="og:description" content="__DESC__"/>
+<style>__CSS__</style>
+</head>
+<body>
+<div class="app">
+  <div class="bg"></div>
+  <main class="stage" id="stage">
+    <canvas id="game"></canvas>
+    <header class="hud">
+      <div class="hud-title" id="hudTitle">Game</div>
+      <div class="hud-scores">
+        <div class="chip"><span class="chip-label">SCORE</span><span id="score">0</span></div>
+        <div class="chip"><span class="chip-label">BEST</span><span id="best">0</span></div>
+      </div>
+      <div class="hud-actions">
+        <button class="icon-btn" id="muteBtn" title="Mute (M)" aria-label="Toggle sound">&#9834;</button>
+        <button class="icon-btn" id="pauseBtn" title="Pause (P)" aria-label="Pause">&#10073;&#10073;</button>
+      </div>
+    </header>
+    <div class="overlay" id="overlayTitle">
+      <div class="panel">
+        <h1 class="game-name" id="titleName">Game</h1>
+        <p class="tagline" id="titleTag"></p>
+        <p class="how" id="titleHow"></p>
+        <button class="cta" id="playBtn">Play</button>
+        <div class="hint" id="controlHint"></div>
+      </div>
+    </div>
+    <div class="overlay hidden" id="overlayPause">
+      <div class="panel">
+        <h2>Paused</h2>
+        <button class="cta" id="resumeBtn">Resume</button>
+        <button class="ghost" id="restartBtn">Restart</button>
+      </div>
+    </div>
+    <div class="overlay hidden" id="overlayOver">
+      <div class="panel">
+        <h2 id="overTitle">Game Over</h2>
+        <div class="final">
+          <div><span class="chip-label">SCORE</span><div class="big" id="finalScore">0</div></div>
+          <div><span class="chip-label">BEST</span><div class="big" id="finalBest">0</div></div>
+        </div>
+        <button class="cta" id="againBtn">Play Again</button>
+      </div>
+    </div>
+  </main>
+  <footer class="credit"><a id="galleryLink" href="../../">&#8592; Game Studio</a><span id="madeTag">auto-generated</span></footer>
+</div>
+<script>__ENGINE__</script>
+<script>__GAME__</script>
+<script>window.GameShell.boot(window.GAME);</script>
+</body>
+</html>

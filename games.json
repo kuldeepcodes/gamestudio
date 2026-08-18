@@ -1,0 +1,21 @@
+{
+  "updated": "2026-08-18",
+  "games": [
+    {
+      "id": "voidfall",
+      "slug": "2026-08-18-voidfall",
+      "title": "Voidfall",
+      "tagline": "Ride the neon rain.",
+      "description": "Slide through a storm of neon shards, scoop glowing orbs, and survive as the void speeds up.",
+      "genre": "dodge",
+      "mechanic": "free-horizontal dodge-and-collect",
+      "theme": "neon void",
+      "tags": ["arcade", "dodge", "reflex", "neon"],
+      "accent": "#6ee7ff",
+      "accent2": "#a78bfa",
+      "bg": "#070b1a",
+      "emoji": "\ud83c\udf0c",
+      "date": "2026-08-18"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "gamestudio-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Build + hourly game-generation tooling for Game Studio.",
+  "scripts": {
+    "build": "node build-game.mjs",
+    "smoke": "node lib/smoke.mjs",
+    "generate": "node generate-game.mjs"
+  },
+  "dependencies": {
+    "jsdom": "^24.1.0"
+  }
+}

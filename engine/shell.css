@@ -1,0 +1,71 @@
+/* GameStudio premium shell — themeable via CSS variables set from each game's meta.
+   No external dependencies (no web fonts, images or network) so every game is offline-ready. */
+:root{
+  --accent:#6ee7ff; --accent2:#a78bfa;
+  --bg:#0b1020; --bg2:#131a33;
+  --ink:#eaf0ff; --muted:#93a0c8;
+  --panel:rgba(18,24,48,.72); --stroke:rgba(255,255,255,.10);
+  --radius:20px; --shadow:0 24px 70px rgba(0,0,0,.55);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--font);color:var(--ink);background:var(--bg);overflow:hidden;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.app{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.bg{position:absolute;inset:0;z-index:0;overflow:hidden;background:
+   radial-gradient(1200px 800px at 15% -10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
+   radial-gradient(1000px 900px at 110% 20%, color-mix(in srgb, var(--accent2) 22%, transparent), transparent 55%),
+   linear-gradient(160deg, var(--bg), var(--bg2))}
+.bg::after{content:"";position:absolute;inset:-40%;
+  background:conic-gradient(from 0deg, transparent 0 40%, color-mix(in srgb,var(--accent) 8%, transparent) 50%, transparent 60% 100%);
+  animation:spin 26s linear infinite;filter:blur(30px);opacity:.5}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stage{position:relative;z-index:1;width:min(96vw,520px);aspect-ratio:var(--aspect,2/3);
+  max-height:88vh;border-radius:var(--radius);overflow:hidden;background:rgba(4,7,18,.55);
+  border:1px solid var(--stroke);box-shadow:var(--shadow)}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.hud{position:absolute;top:0;left:0;right:0;z-index:3;display:flex;align-items:center;gap:10px;
+  padding:12px 14px;background:linear-gradient(180deg,rgba(4,7,18,.55),transparent);pointer-events:none}
+.hud .icon-btn{pointer-events:auto}
+.hud-title{font-weight:700;font-size:14px;letter-spacing:.4px;opacity:.9;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:38%}
+.hud-scores{display:flex;gap:8px;margin-left:auto}
+.chip{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;
+  background:rgba(255,255,255,.06);border:1px solid var(--stroke);font-variant-numeric:tabular-nums;font-weight:700;font-size:13px}
+.chip-label{font-size:9px;letter-spacing:1.5px;color:var(--muted);font-weight:800}
+.hud-actions{display:flex;gap:6px}
+.icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.06);color:var(--ink);cursor:pointer;font-size:13px;display:grid;place-items:center;transition:.15s}
+.icon-btn:hover{background:rgba(255,255,255,.14);transform:translateY(-1px)}
+.icon-btn.off{opacity:.4}
+.overlay{position:absolute;inset:0;z-index:4;display:grid;place-items:center;padding:22px;
+  background:radial-gradient(120% 120% at 50% 0%, rgba(4,7,18,.30), rgba(4,7,18,.78));animation:fade .3s ease}
+.overlay.hidden{display:none}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.panel{width:100%;max-width:360px;text-align:center;padding:26px 22px;border-radius:var(--radius);
+  background:var(--panel);border:1px solid var(--stroke);box-shadow:var(--shadow);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);animation:pop .35s cubic-bezier(.2,.9,.25,1.2)}
+@keyframes pop{from{transform:translateY(10px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+.game-name{margin:0 0 6px;font-size:30px;line-height:1.05;font-weight:800;letter-spacing:-.5px;
+  background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tagline{margin:0 0 14px;opacity:.92;font-size:14px;font-weight:600}
+.how{margin:0 0 20px;color:var(--muted);font-size:13px;line-height:1.5}
+h2{margin:0 0 16px;font-size:22px;font-weight:800}
+.cta{appearance:none;border:none;cursor:pointer;width:100%;padding:14px 18px;border-radius:14px;font-weight:800;
+  font-size:16px;color:#04121b;letter-spacing:.3px;background:linear-gradient(120deg,var(--accent),var(--accent2));
+  box-shadow:0 12px 30px color-mix(in srgb,var(--accent) 40%, transparent);transition:.15s}
+.cta:hover{transform:translateY(-2px);filter:brightness(1.05)}
+.cta:active{transform:translateY(0)}
+.ghost{margin-top:10px;appearance:none;cursor:pointer;width:100%;padding:12px;border-radius:12px;background:transparent;
+  border:1px solid var(--stroke);color:var(--muted);font-weight:700;font-size:14px}
+.ghost:hover{color:var(--ink);border-color:var(--accent)}
+.hint{margin-top:16px;color:var(--muted);font-size:11px;letter-spacing:.3px;line-height:1.6}
+.final{display:flex;gap:14px;justify-content:center;margin-bottom:20px}
+.final>div{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--stroke);border-radius:14px;padding:12px}
+.big{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:4px}
+.credit{position:relative;z-index:1;margin-top:14px;display:flex;gap:12px;align-items:center;color:var(--muted);font-size:12px}
+.credit a{color:var(--muted);text-decoration:none;font-weight:700}
+.credit a:hover{color:var(--accent)}
+#madeTag{opacity:.6}
+@media (max-width:520px){.game-name{font-size:26px}}
