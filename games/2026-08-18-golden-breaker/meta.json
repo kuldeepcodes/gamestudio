@@ -1,0 +1,28 @@
+{
+  "id": "golden-breaker",
+  "slug": "2026-08-18-golden-breaker",
+  "title": "Golden Breaker",
+  "tagline": "Find the rhythm.",
+  "description": "Golden Breaker — a clockwork brass endless brick-breaker game. Bounce the ball to shatter every brick. Clear a wave and a denser one drops. Miss the ball and it's over.",
+  "genre": "arcade",
+  "mechanic": "endless brick-breaker",
+  "theme": "clockwork brass",
+  "tags": [
+    "arcade",
+    "paddle",
+    "arcade",
+    "playful"
+  ],
+  "accent": "#22d3ee",
+  "accent2": "#818cf8",
+  "bg": "#020617",
+  "emoji": "🧱",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "tower stacking",
+    "theme": "clockwork brass",
+    "twist": "every pickup changes the rules briefly",
+    "mood": "playful"
+  }
+}

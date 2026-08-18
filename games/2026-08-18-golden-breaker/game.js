@@ -1,36 +1,36 @@
 window.GAME = {
   meta: {
-    "title": "Moonlit Bounce",
-    "tagline": "One more run.",
-    "description": "Moonlit Bounce — a moonlit rooftops endless brick-breaker game. Bounce the ball to shatter every brick. Clear a wave and a denser one drops. Miss the ball and it's over.",
+    "title": "Golden Breaker",
+    "tagline": "Find the rhythm.",
+    "description": "Golden Breaker — a clockwork brass endless brick-breaker game. Bounce the ball to shatter every brick. Clear a wave and a denser one drops. Miss the ball and it's over.",
     "instructions": "Bounce the ball to shatter every brick. Clear a wave and a denser one drops. Miss the ball and it's over. Drag / Arrows to move the paddle.",
     "controls": "Drag / Arrows to move the paddle",
-    "accent": "#6ee7ff",
-    "accent2": "#a78bfa",
-    "bg": "#070b1a",
+    "accent": "#22d3ee",
+    "accent2": "#818cf8",
+    "bg": "#020617",
     "width": 720,
     "height": 480,
     "genre": "arcade",
     "mechanic": "endless brick-breaker",
-    "theme": "moonlit rooftops",
+    "theme": "clockwork brass",
     "tags": [
       "arcade",
       "paddle",
       "arcade",
-      "satisfying"
+      "playful"
     ],
     "emoji": "🧱"
   },
   create: function (engine) {
-    var P = {"pw":118,"pspeed":620,"pmargin":40,"br":9,"bspeed":318,"ramp":0.03,"cols":8,"rowsMax":6,"bh":20,"accent":"#6ee7ff","accent2":"#a78bfa","hazard":"#ff5d73"};
+    var P = {"pw":124,"pspeed":620,"pmargin":40,"br":9,"bspeed":330,"ramp":0.03,"cols":11,"rowsMax":4,"bh":18,"serve":1.1,"accent":"#22d3ee","accent2":"#818cf8","hazard":"#ff5d73"};
     var build = function buildPaddle(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
-  var paddle, ball, bricks, t, wave;
+  var paddle, ball, bricks, t, wave, serveT;
   function makeBricks() {
     bricks = []; wave++; var cols = P.cols, rows = Math.min(P.rowsMax, 2 + wave), gap = 6, bw = (W - gap * (cols + 1)) / cols, bh = P.bh;
     for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) bricks.push({ x: gap + c * (bw + gap), y: 44 + r * (bh + gap), w: bw, h: bh });
   }
-  function reset() { paddle = { x: W / 2, w: P.pw }; ball = { x: W / 2, y: H * 0.6, vx: P.bspeed * (engine.chance(0.5) ? 1 : -1), vy: -P.bspeed, r: P.br }; t = 0; wave = 0; makeBricks(); }
+  function reset() { paddle = { x: W / 2, w: P.pw }; ball = { x: W / 2, y: H * 0.6, vx: P.bspeed * (engine.chance(0.5) ? 1 : -1), vy: -P.bspeed, r: P.br }; t = 0; wave = 0; serveT = P.serve; makeBricks(); }
   function over() { S.hit(); engine.shake(16); engine.particles.burst(ball.x, ball.y, { count: 30, color: P.hazard, speed: 200, life: 0.6, gravity: 120 }); engine.gameOver(); }
   return {
     setup: reset, reset: reset,
@@ -39,6 +39,14 @@ window.GAME = {
       if (input.pointer.down) paddle.x = input.pointer.x;
       var d = input.dir().x; if (d) paddle.x += d * P.pspeed * dt;
       paddle.x = engine.clamp(paddle.x, paddle.w / 2, W - paddle.w / 2);
+      // the ball rests on the paddle briefly at the start of a run so the player can
+      // orient before it launches (a stationary paddle otherwise loses in under 2s)
+      if (serveT > 0) {
+        serveT -= dt;
+        ball.x = paddle.x; ball.y = H - P.pmargin - ball.r - 4;
+        if (serveT <= 0) { ball.vy = -Math.abs(P.bspeed); ball.vx = P.bspeed * (engine.chance(0.5) ? 0.6 : -0.6); S.jump(); }
+        return;
+      }
       var speed = 1 + t * P.ramp;
       ball.x += ball.vx * dt * speed; ball.y += ball.vy * dt * speed;
       if (ball.x < ball.r) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }

@@ -31,23 +31,29 @@ function ghOutput(kv) {
 // Games sitting in unmerged `game/*` PR branches are not in main's games.json, so without
 // this the next hourly run sees an unchanged gallery and picks the same most-overdue
 // archetype again — producing near-identical drops whenever PRs aren't merged promptly.
-// Read those branches' manifests so pending games still count for rotation and naming.
+// Only the entry a branch actually introduces counts: a branch is cut from main, so its
+// manifest also carries every already-shipped game, and trusting the whole file would
+// resurrect games that have since been removed. The branch is named `game/<slug>`, so the
+// matching slug is precisely the game under review.
 function pendingEntries(existingSlugs) {
   const out = [];
+  const git = (args) => execFileSync("git", args, { cwd: ROOT, encoding: "utf8", maxBuffer: 8 * 1024 * 1024 });
+  let refs = [];
   try {
-    const refs = execFileSync("git", ["for-each-ref", "--format=%(refname)", "refs/remotes/origin/game/"], { cwd: ROOT, encoding: "utf8" })
+    refs = git(["for-each-ref", "--format=%(refname)", "refs/remotes/origin/game/"])
       .split("\n").map((s) => s.trim()).filter(Boolean);
-    for (const ref of refs) {
-      try {
-        const raw = execFileSync("git", ["show", `${ref}:games.json`], { cwd: ROOT, encoding: "utf8", maxBuffer: 8 * 1024 * 1024 });
-        for (const g of (JSON.parse(raw).games || [])) {
-          if (!g || !g.slug) continue;
-          if (existingSlugs.has(g.slug) || out.some((o) => o.slug === g.slug)) continue;
-          out.push(g);
-        }
-      } catch (e) { /* branch without a readable manifest — skip */ }
-    }
-  } catch (e) { /* not a git checkout, or no such refs — fall back to main only */ }
+  } catch (e) { return out; }
+  for (const ref of refs) {
+    const slug = ref.replace(/^refs\/remotes\/origin\/game\//, "");
+    if (!slug || existingSlugs.has(slug) || out.some((o) => o.slug === slug)) continue;
+    // skip branches already merged into the current HEAD
+    try { git(["merge-base", "--is-ancestor", ref, "HEAD"]); continue; } catch (e) { /* unmerged — keep going */ }
+    try {
+      const raw = git(["show", `${ref}:games.json`]);
+      const entry = (JSON.parse(raw).games || []).find((g) => g && g.slug === slug);
+      if (entry) out.push(entry);
+    } catch (e) { /* branch without a readable manifest — skip */ }
+  }
   return out;
 }
 

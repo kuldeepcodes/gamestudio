@@ -2,6 +2,27 @@
   "updated": "2026-08-18",
   "games": [
     {
+      "id": "golden-breaker",
+      "slug": "2026-08-18-golden-breaker",
+      "title": "Golden Breaker",
+      "tagline": "Find the rhythm.",
+      "description": "Golden Breaker — a clockwork brass endless brick-breaker game. Bounce the ball to shatter every brick. Clear a wave and a denser one drops. Miss the ball and it's over.",
+      "genre": "arcade",
+      "mechanic": "endless brick-breaker",
+      "theme": "clockwork brass",
+      "tags": [
+        "arcade",
+        "paddle",
+        "arcade",
+        "playful"
+      ],
+      "accent": "#22d3ee",
+      "accent2": "#818cf8",
+      "bg": "#020617",
+      "emoji": "🧱",
+      "date": "2026-08-18"
+    },
+    {
       "id": "turbo-skip",
       "slug": "2026-08-18-turbo-skip",
       "title": "Turbo Skip",
@@ -15,195 +36,6 @@
         "flapper",
         "arcade",
         "frantic"
-      ],
-      "accent": "#5eead4",
-      "accent2": "#fca5a5",
-      "bg": "#04140f",
-      "emoji": "🪽",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "clockwork-lanes",
-      "slug": "2026-08-18-clockwork-lanes",
-      "title": "Clockwork Lanes",
-      "tagline": "Simple. Ruthless.",
-      "description": "Clockwork Lanes — a clockwork brass lane-switch dodge & collect game. Swipe or use arrows to switch lanes. Grab the orbs, dodge the spikes.",
-      "genre": "arcade",
-      "mechanic": "lane-switch dodge & collect",
-      "theme": "clockwork brass",
-      "tags": [
-        "arcade",
-        "lane",
-        "arcade",
-        "playful"
-      ],
-      "accent": "#6ee7ff",
-      "accent2": "#a78bfa",
-      "bg": "#070b1a",
-      "emoji": "🛣️",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "zen-rebound",
-      "slug": "2026-08-18-zen-rebound",
-      "title": "Zen Rebound",
-      "tagline": "Easy to learn. Hard to master.",
-      "description": "Zen Rebound — a zen garden endless brick-breaker game. Bounce the ball to shatter every brick. Clear a wave and a denser one drops. Miss the ball and it's over.",
-      "genre": "arcade",
-      "mechanic": "endless brick-breaker",
-      "theme": "zen garden",
-      "tags": [
-        "arcade",
-        "paddle",
-        "arcade",
-        "playful"
-      ],
-      "accent": "#5eead4",
-      "accent2": "#fca5a5",
-      "bg": "#04140f",
-      "emoji": "🧱",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "circuit-vortex",
-      "slug": "2026-08-18-circuit-vortex",
-      "title": "Circuit Vortex",
-      "tagline": "Simple. Ruthless.",
-      "description": "Circuit Vortex — a circuit board omni-directional dodge & collect game. Glide to dodge the incoming shards and scoop the glowing motes. One hit and it's over.",
-      "genre": "survival",
-      "mechanic": "omni-directional dodge & collect",
-      "theme": "circuit board",
-      "tags": [
-        "survival",
-        "avoider",
-        "arcade",
-        "mysterious"
-      ],
-      "accent": "#22d3ee",
-      "accent2": "#818cf8",
-      "bg": "#020617",
-      "emoji": "🛸",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "prism-leap",
-      "slug": "2026-08-18-prism-leap",
-      "title": "Prism Leap",
-      "tagline": "Pure reflex.",
-      "description": "Prism Leap — a prism / rainbow tap-to-flap through gaps game. Tap (or Space) to flap and thread every gap. Touch a wall or the floor and you're done.",
-      "genre": "reflex",
-      "mechanic": "tap-to-flap through gaps",
-      "theme": "prism / rainbow",
-      "tags": [
-        "reflex",
-        "flapper",
-        "arcade",
-        "meditative"
-      ],
-      "accent": "#7CFFCB",
-      "accent2": "#4ADEDE",
-      "bg": "#04160f",
-      "emoji": "🪽",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "storm-focus",
-      "slug": "2026-08-18-storm-focus",
-      "title": "Storm Focus",
-      "tagline": "Chase the high score.",
-      "description": "Storm Focus — a storm clouds color-target tap test game. Tap the glowing rings before they fade. Never tap a crossed one, and don't let too many good ones slip away.",
-      "genre": "reflex",
-      "mechanic": "color-target tap test",
-      "theme": "storm clouds",
-      "tags": [
-        "reflex",
-        "reflex",
-        "arcade",
-        "mysterious"
-      ],
-      "accent": "#8ab4ff",
-      "accent2": "#b388ff",
-      "bg": "#05070f",
-      "emoji": "🎯",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "autumn-bounce",
-      "slug": "2026-08-18-autumn-bounce",
-      "title": "Autumn Bounce",
-      "tagline": "Pure reflex.",
-      "description": "Autumn Bounce — a autumn forest endless brick-breaker game. Bounce the ball to shatter every brick. Clear a wave and a denser one drops. Miss the ball and it's over.",
-      "genre": "arcade",
-      "mechanic": "endless brick-breaker",
-      "theme": "autumn forest",
-      "tags": [
-        "arcade",
-        "paddle",
-        "arcade",
-        "satisfying"
-      ],
-      "accent": "#f9a8d4",
-      "accent2": "#c084fc",
-      "bg": "#160a1e",
-      "emoji": "🧱",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "galaxy-pulse",
-      "slug": "2026-08-18-galaxy-pulse",
-      "title": "Galaxy Pulse",
-      "tagline": "Simple. Ruthless.",
-      "description": "Galaxy Pulse — a galaxy nebula omni-directional dodge & collect game. Glide to dodge the incoming shards and scoop the glowing motes. One hit and it's over.",
-      "genre": "survival",
-      "mechanic": "omni-directional dodge & collect",
-      "theme": "galaxy nebula",
-      "tags": [
-        "survival",
-        "avoider",
-        "arcade",
-        "meditative"
-      ],
-      "accent": "#22d3ee",
-      "accent2": "#818cf8",
-      "bg": "#020617",
-      "emoji": "🛸",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "vaporwave-heights",
-      "slug": "2026-08-18-vaporwave-heights",
-      "title": "Vaporwave Heights",
-      "tagline": "Easy to learn. Hard to master.",
-      "description": "Vaporwave Heights — a vaporwave sunset precision block stacking game. Tap to drop each block on the one below. Overhang gets sliced off — miss completely and the tower falls.",
-      "genre": "timing",
-      "mechanic": "precision block stacking",
-      "theme": "vaporwave sunset",
-      "tags": [
-        "timing",
-        "stacker",
-        "arcade",
-        "tense"
-      ],
-      "accent": "#5eead4",
-      "accent2": "#fca5a5",
-      "bg": "#04140f",
-      "emoji": "🏗️",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "crystal-leap",
-      "slug": "2026-08-18-crystal-leap",
-      "title": "Crystal Leap",
-      "tagline": "Easy to learn. Hard to master.",
-      "description": "Crystal Leap — a crystal cavern tap-to-flap through gaps game. Tap (or Space) to flap and thread every gap. Touch a wall or the floor and you're done.",
-      "genre": "reflex",
-      "mechanic": "tap-to-flap through gaps",
-      "theme": "crystal cavern",
-      "tags": [
-        "reflex",
-        "flapper",
-        "arcade",
-        "playful"
       ],
       "accent": "#5eead4",
       "accent2": "#fca5a5",
@@ -230,27 +62,6 @@
       "accent2": "#38bdf8",
       "bg": "#0a0416",
       "emoji": "🎯",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "moonlit-bounce",
-      "slug": "2026-08-18-moonlit-bounce",
-      "title": "Moonlit Bounce",
-      "tagline": "One more run.",
-      "description": "Moonlit Bounce — a moonlit rooftops endless brick-breaker game. Bounce the ball to shatter every brick. Clear a wave and a denser one drops. Miss the ball and it's over.",
-      "genre": "arcade",
-      "mechanic": "endless brick-breaker",
-      "theme": "moonlit rooftops",
-      "tags": [
-        "arcade",
-        "paddle",
-        "arcade",
-        "satisfying"
-      ],
-      "accent": "#6ee7ff",
-      "accent2": "#a78bfa",
-      "bg": "#070b1a",
-      "emoji": "🧱",
       "date": "2026-08-18"
     },
     {
