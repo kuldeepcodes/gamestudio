@@ -1,0 +1,28 @@
+{
+  "id": "solar-tower",
+  "slug": "2026-08-18-solar-tower",
+  "title": "Solar Tower",
+  "tagline": "Nerves of steel.",
+  "description": "Solar Tower — a retro arcade CRT precision block stacking game. Tap to drop each block on the one below. Overhang gets sliced off — miss completely and the tower falls.",
+  "genre": "timing",
+  "mechanic": "precision block stacking",
+  "theme": "retro arcade CRT",
+  "tags": [
+    "timing",
+    "stacker",
+    "arcade",
+    "mysterious"
+  ],
+  "accent": "#fb7185",
+  "accent2": "#fbbf24",
+  "bg": "#170608",
+  "emoji": "🏗️",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "maze navigation",
+    "theme": "retro arcade CRT",
+    "twist": "the world speeds up relentlessly",
+    "mood": "mysterious"
+  }
+}
