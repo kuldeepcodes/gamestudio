@@ -5,6 +5,7 @@
   "description": "Build + hourly game-generation tooling for Game Studio.",
   "scripts": {
     "build": "node build-game.mjs",
+    "rebuild": "node rebuild-all.mjs",
     "smoke": "node lib/smoke.mjs",
     "generate": "node generate-game.mjs"
   },

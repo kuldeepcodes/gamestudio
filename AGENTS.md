@@ -32,6 +32,10 @@ as raw HTML. Instead:
   The full contract is in [`engine/api.md`](engine/api.md) — read it before writing a game.
 - `scripts/build-game.mjs` inlines `engine + game + shell` into one self-contained
   `games/<slug>/index.html`.
+- **Because the engine and shell are inlined at build time, editing anything in `engine/`
+  does not change already-published games.** After any change there, rebuild them all:
+  `node scripts/rebuild-all.mjs` (or `npm run rebuild` from `scripts/`), then re-run the
+  smoke test. Forgetting this leaves old games on the previous shell.
 
 ### `game.js` shape (see `engine/api.md` for the authoritative spec)
 
