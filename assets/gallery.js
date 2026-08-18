@@ -48,7 +48,9 @@
     render(f);
   }
 
-  fetch("games.json", { cache: "no-store" })
+  // GitHub Pages' CDN caches games.json for 10 min, so a freshly merged game can
+  // appear "missing". A per-minute cache-buster makes the URL unique to the edge.
+  fetch("games.json?v=" + Math.floor(Date.now() / 60000), { cache: "no-store" })
     .then(function (r) { return r.json(); })
     .then(function (data) {
       all = (data.games || []).slice().sort(function (a, b) { return (b.date || "").localeCompare(a.date || "") || (b.id || "").localeCompare(a.id || ""); });
