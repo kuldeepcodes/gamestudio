@@ -77,6 +77,6 @@ export function buildBrief(existingGames, seedInput) {
     width: orientation === "portrait" ? 480 : 640,
     height: orientation === "portrait" ? 720 : 480,
     palette: { accent: palette[0], accent2: palette[1], bg: palette[2] },
-    avoid: existingGames.slice(0, 40).map((g) => ({ title: g.title, genre: g.genre, mechanic: g.mechanic, theme: g.theme }))
+    avoid: existingGames.slice(0, 40).map((g) => ({ title: g.title, genre: g.genre, mechanic: g.mechanic, theme: g.theme, tagline: g.tagline }))
   };
 }

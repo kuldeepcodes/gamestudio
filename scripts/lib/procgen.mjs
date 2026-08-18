@@ -264,6 +264,54 @@ function buildReflex(engine, P) {
   };
 }
 
+// ---------- variation ----------
+
+// Per-archetype jitter ranges. Two games of the same archetype should still *play*
+// differently, so every tunable is scaled by a seeded multiplier within safe bounds.
+// Keys absent from a spec are left at their baseline.
+const JITTER = {
+  avoider: { kspeed: [0.85, 1.20], foeSpeed: [0.80, 1.30], spawn: [0.75, 1.25], foeMax: [0.80, 1.35], foeMin: [0.80, 1.20], motes: [0.70, 1.70], r: [0.85, 1.15], follow: [0.80, 1.25] },
+  flapper: { grav: [0.85, 1.20], flap: [0.90, 1.12], scroll: [0.85, 1.30], gap: [0.88, 1.18], gapX: [0.85, 1.25], wallW: [0.85, 1.25], r: [0.88, 1.12] },
+  lane: { fall: [0.85, 1.35], spawn: [0.75, 1.25], badChance: [0.75, 1.25], itemR: [0.85, 1.15], pr: [0.88, 1.15], slide: [0.80, 1.30] },
+  paddle: { bspeed: [0.85, 1.25], pw: [0.75, 1.25], cols: [0.80, 1.40], rowsMax: [0.70, 1.50], bh: [0.88, 1.18], pspeed: [0.85, 1.20], br: [0.85, 1.25] },
+  stacker: { speed: [0.78, 1.40], startW: [0.78, 1.25], bh: [0.85, 1.20], rampPx: [0.70, 1.50] },
+  reflex: { life: [0.82, 1.22], spawn: [0.75, 1.30], tr: [0.85, 1.25], badChance: [0.75, 1.35], maxMiss: [0.80, 1.40] }
+};
+
+// Scale numeric params in place. Integers stay integers, signs are preserved (flap is
+// negative), and everything is floored at a playable minimum.
+function jitterParams(key, P, rng) {
+  const spec = JITTER[key];
+  if (!spec) return P;
+  const out = Object.assign({}, P);
+  for (const k of Object.keys(spec)) {
+    const base = P[k];
+    if (typeof base !== "number" || !isFinite(base)) continue;
+    const [lo, hi] = spec[k];
+    const scaled = base * (lo + (hi - lo) * rng());
+    const isInt = Number.isInteger(base);
+    let v = isInt ? Math.round(scaled) : Math.round(scaled * 1000) / 1000;
+    if (base > 0) v = Math.max(isInt ? 1 : 0.05, v);
+    out[k] = v;
+  }
+  // keep dependent params coherent after jitter
+  if (typeof out.foeMin === "number" && typeof out.foeMax === "number" && out.foeMin > out.foeMax) {
+    const t = out.foeMin; out.foeMin = out.foeMax; out.foeMax = t;
+  }
+  return out;
+}
+
+const ADJECTIVES = [
+  "Hyper", "Velvet", "Turbo", "Silent", "Wild", "Lucid", "Static", "Golden", "Feral", "Chrome",
+  "Midnight", "Solar", "Frantic", "Hollow", "Radiant", "Savage", "Quantum", "Drowsy", "Electric", "Paper"
+];
+
+function shuffled(arr, rng) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+
 // ---------- archetype registry ----------
 
 const HAZARD = "#ff5d73";
@@ -334,22 +382,49 @@ export function generateGameProc(brief, variant = 0) {
   const rng = mulberry32(seed);
   const pick = (a) => a[Math.floor(rng() * a.length)];
 
-  const recent = new Set((brief.avoid || []).slice(0, 3).map((a) => norm(a.mechanic)));
-  let pool = ARCH.filter((a) => !recent.has(norm(a.mechanic)));
-  if (!pool.length) pool = ARCH;
-  const a = pool[Math.floor(rng() * pool.length)];
+  const avoid = brief.avoid || [];
+
+  // Strict least-recently-used rotation. Previously this only skipped the last 3
+  // mechanics, so with 6 archetypes a repeat could land on the 4th game. Now every
+  // archetype is ranked by how long since it last shipped and the most overdue one
+  // wins, which cycles through all of them before any repeats.
+  const lastUsed = new Map();
+  avoid.forEach((g, i) => { const m = norm(g.mechanic); if (m && !lastUsed.has(m)) lastUsed.set(m, i); });
+  const ranked = ARCH
+    .map((a) => {
+      const m = norm(a.mechanic);
+      // never-shipped archetypes sort first, with a random tiebreak between them
+      const age = lastUsed.has(m) ? lastUsed.get(m) : 1e6 + rng() * 1000;
+      return { a, age };
+    })
+    .sort((x, y) => y.age - x.age)
+    .map((x) => x.a);
+  // variant 0 takes only the most overdue archetype; retries widen the pool so a
+  // failing archetype can be swapped out rather than retried forever.
+  const a = ranked[Math.floor(rng() * Math.min(ranked.length, 1 + variant))];
 
   const pal = brief.palette || { accent: "#6ee7ff", accent2: "#a78bfa", bg: "#070b1a" };
   const fast = { playful: 0.2, cheerful: 0.2, meditative: 0, satisfying: 0.3, mysterious: 0.2, hypnotic: 0.3, tense: 0.6, frantic: 0.9 }[brief.mood] ?? 0.3;
-  const P = a.params({ pal, rng, fast });
+  const P = jitterParams(a.key, a.params({ pal, rng, fast }), rng);
 
-  const themeAdj = titleCase(String(brief.theme || "neon").split(/\s+/)[0]);
-  const title = themeAdj + " " + pick(a.nouns);
+  // Titles must not collide with anything already in the gallery.
+  const usedTitles = new Set(avoid.map((g) => norm(g.title)));
+  const themeWords = String(brief.theme || "neon").split(/[^A-Za-z]+/).filter(Boolean).map(titleCase);
+  const prefixes = shuffled(themeWords.concat(ADJECTIVES), rng);
+  const nouns = shuffled(a.nouns, rng);
+  let title = "";
+  for (const n of nouns) { for (const p of prefixes) { const t = p + " " + n; if (!usedTitles.has(norm(t))) { title = t; break; } } if (title) break; }
+  if (!title) title = titleCase(String(brief.theme || "neon").split(/\s+/)[0]) + " " + pick(a.nouns) + " " + (avoid.length + 1);
+
   const d = dims(a.orient, brief);
-  const tagline = pick([
+  const usedTaglines = new Set(avoid.slice(0, 6).map((g) => norm(g.tagline)));
+  const taglines = shuffled([
     "One more run.", "Pure reflex.", "Chase the high score.", "Don't blink.", "Simple. Ruthless.",
-    "Flow state, unlocked.", "How long can you last?", "Easy to learn. Hard to master."
-  ]);
+    "Flow state, unlocked.", "How long can you last?", "Easy to learn. Hard to master.",
+    "Just one more try.", "Reflexes required.", "Deceptively simple.", "Push your luck.",
+    "Find the rhythm.", "Nerves of steel.", "Blink and it's over.", "Master the timing."
+  ], rng);
+  const tagline = taglines.find((t) => !usedTaglines.has(norm(t))) || taglines[0];
   const meta = {
     title,
     tagline,
