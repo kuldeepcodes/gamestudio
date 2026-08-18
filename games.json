@@ -2,6 +2,27 @@
   "updated": "2026-08-18",
   "games": [
     {
+      "id": "electric-night-shift",
+      "slug": "2026-08-18-electric-night-shift",
+      "title": "Electric Night Shift",
+      "tagline": "Just one more try.",
+      "description": "Electric Night Shift — a prism / rainbow elevator dispatch game. You're the lift operator in a busy tower. Collect waiting people and drop them at their floor before anyone's patience runs out.",
+      "genre": "simulation",
+      "mechanic": "elevator dispatch",
+      "theme": "prism / rainbow",
+      "tags": [
+        "simulation",
+        "elevator",
+        "arcade",
+        "playful"
+      ],
+      "accent": "#f97316",
+      "accent2": "#facc15",
+      "bg": "#160b02",
+      "emoji": "🛗",
+      "date": "2026-08-18"
+    },
+    {
       "id": "golden-breaker",
       "slug": "2026-08-18-golden-breaker",
       "title": "Golden Breaker",
