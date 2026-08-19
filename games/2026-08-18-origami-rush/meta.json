@@ -1,0 +1,28 @@
+{
+  "id": "origami-rush",
+  "slug": "2026-08-18-origami-rush",
+  "title": "Origami Rush",
+  "tagline": "Chase the high score.",
+  "description": "Origami Rush — a origami paper lane-switch dodge & collect game. Swipe or use arrows to switch lanes. Grab the orbs, dodge the spikes.",
+  "genre": "arcade",
+  "mechanic": "lane-switch dodge & collect",
+  "theme": "origami paper",
+  "tags": [
+    "arcade",
+    "lane",
+    "arcade",
+    "meditative"
+  ],
+  "accent": "#5eead4",
+  "accent2": "#fca5a5",
+  "bg": "#04140f",
+  "emoji": "🛣️",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "flappy-style hop",
+    "theme": "origami paper",
+    "twist": "everything moves to a pulsing beat",
+    "mood": "meditative"
+  }
+}
