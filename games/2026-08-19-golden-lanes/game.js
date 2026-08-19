@@ -1,28 +1,28 @@
 window.GAME = {
   meta: {
-    "title": "Origami Rush",
-    "tagline": "Chase the high score.",
-    "description": "Origami Rush — a origami paper lane-switch dodge & collect game. Swipe or use arrows to switch lanes. Grab the orbs, dodge the spikes.",
+    "title": "Golden Lanes",
+    "tagline": "One more run.",
+    "description": "Golden Lanes — a candy world lane-switch dodge & collect game. Swipe or use arrows to switch lanes. Grab the orbs, dodge the spikes.",
     "instructions": "Swipe or use arrows to switch lanes. Grab the orbs, dodge the spikes. Swipe / Arrows to switch lanes.",
     "controls": "Swipe / Arrows to switch lanes",
-    "accent": "#5eead4",
-    "accent2": "#fca5a5",
-    "bg": "#04140f",
+    "accent": "#93c5fd",
+    "accent2": "#f0abfc",
+    "bg": "#060814",
     "width": 480,
     "height": 720,
     "genre": "arcade",
     "mechanic": "lane-switch dodge & collect",
-    "theme": "origami paper",
+    "theme": "candy world",
     "tags": [
       "arcade",
       "lane",
       "arcade",
-      "meditative"
+      "hypnotic"
     ],
     "emoji": "🛣️"
   },
   create: function (engine) {
-    var P = {"lanes":3,"pr":22,"slide":16,"itemR":18,"fall":230,"ramp":12,"spawn":0.85,"badChance":0.5,"accent":"#5eead4","accent2":"#fca5a5","hazard":"#ff5d73"};
+    var P = {"lanes":4,"pr":20,"slide":14,"itemR":21,"fall":333,"ramp":12,"spawn":0.632,"badChance":0.428,"accent":"#93c5fd","accent2":"#f0abfc","hazard":"#ff5d73"};
     var build = function buildLane(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
   var lanes = P.lanes, lane, px, py = Math.round(H * 0.82), items, spawnT, t;

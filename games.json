@@ -1,6 +1,27 @@
 {
-  "updated": "2026-08-18",
+  "updated": "2026-08-19",
   "games": [
+    {
+      "id": "golden-lanes",
+      "slug": "2026-08-19-golden-lanes",
+      "title": "Golden Lanes",
+      "tagline": "One more run.",
+      "description": "Golden Lanes — a candy world lane-switch dodge & collect game. Swipe or use arrows to switch lanes. Grab the orbs, dodge the spikes.",
+      "genre": "arcade",
+      "mechanic": "lane-switch dodge & collect",
+      "theme": "candy world",
+      "tags": [
+        "arcade",
+        "lane",
+        "arcade",
+        "hypnotic"
+      ],
+      "accent": "#93c5fd",
+      "accent2": "#f0abfc",
+      "bg": "#060814",
+      "emoji": "🛣️",
+      "date": "2026-08-19"
+    },
     {
       "id": "feral-last-order",
       "slug": "2026-08-18-feral-last-order",
@@ -167,27 +188,6 @@
       "accent2": "#38bdf8",
       "bg": "#0a0416",
       "emoji": "🎯",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "origami-rush",
-      "slug": "2026-08-18-origami-rush",
-      "title": "Origami Rush",
-      "tagline": "Chase the high score.",
-      "description": "Origami Rush — a origami paper lane-switch dodge & collect game. Swipe or use arrows to switch lanes. Grab the orbs, dodge the spikes.",
-      "genre": "arcade",
-      "mechanic": "lane-switch dodge & collect",
-      "theme": "origami paper",
-      "tags": [
-        "arcade",
-        "lane",
-        "arcade",
-        "meditative"
-      ],
-      "accent": "#5eead4",
-      "accent2": "#fca5a5",
-      "bg": "#04140f",
-      "emoji": "🛣️",
       "date": "2026-08-18"
     },
     {
