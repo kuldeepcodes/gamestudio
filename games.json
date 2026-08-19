@@ -1,6 +1,27 @@
 {
-  "updated": "2026-08-18",
+  "updated": "2026-08-19",
   "games": [
+    {
+      "id": "solar-pulse",
+      "slug": "2026-08-19-solar-pulse",
+      "title": "Solar Pulse",
+      "tagline": "How long can you last?",
+      "description": "Solar Pulse — a underwater bioluminescence omni-directional dodge & collect game. Glide to dodge the incoming shards and scoop the glowing motes. One hit and it's over.",
+      "genre": "survival",
+      "mechanic": "omni-directional dodge & collect",
+      "theme": "underwater bioluminescence",
+      "tags": [
+        "survival",
+        "avoider",
+        "arcade",
+        "playful"
+      ],
+      "accent": "#93c5fd",
+      "accent2": "#f0abfc",
+      "bg": "#060814",
+      "emoji": "🛸",
+      "date": "2026-08-19"
+    },
     {
       "id": "feral-last-order",
       "slug": "2026-08-18-feral-last-order",
@@ -188,27 +209,6 @@
       "accent2": "#fca5a5",
       "bg": "#04140f",
       "emoji": "🛣️",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "velvet-rift",
-      "slug": "2026-08-18-velvet-rift",
-      "title": "Velvet Rift",
-      "tagline": "Flow state, unlocked.",
-      "description": "Velvet Rift — a cozy pastel omni-directional dodge & collect game. Glide to dodge the incoming shards and scoop the glowing motes. One hit and it's over.",
-      "genre": "survival",
-      "mechanic": "omni-directional dodge & collect",
-      "theme": "cozy pastel",
-      "tags": [
-        "survival",
-        "avoider",
-        "arcade",
-        "meditative"
-      ],
-      "accent": "#93c5fd",
-      "accent2": "#f0abfc",
-      "bg": "#060814",
-      "emoji": "🛸",
       "date": "2026-08-18"
     },
     {

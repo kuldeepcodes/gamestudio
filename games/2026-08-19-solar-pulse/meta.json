@@ -1,0 +1,28 @@
+{
+  "id": "solar-pulse",
+  "slug": "2026-08-19-solar-pulse",
+  "title": "Solar Pulse",
+  "tagline": "How long can you last?",
+  "description": "Solar Pulse — a underwater bioluminescence omni-directional dodge & collect game. Glide to dodge the incoming shards and scoop the glowing motes. One hit and it's over.",
+  "genre": "survival",
+  "mechanic": "omni-directional dodge & collect",
+  "theme": "underwater bioluminescence",
+  "tags": [
+    "survival",
+    "avoider",
+    "arcade",
+    "playful"
+  ],
+  "accent": "#93c5fd",
+  "accent2": "#f0abfc",
+  "bg": "#060814",
+  "emoji": "🛸",
+  "date": "2026-08-19",
+  "source": "procedural",
+  "brief": {
+    "genre": "balance / tightrope",
+    "theme": "underwater bioluminescence",
+    "twist": "every pickup changes the rules briefly",
+    "mood": "playful"
+  }
+}
