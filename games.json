@@ -2,6 +2,27 @@
   "updated": "2026-08-19",
   "games": [
     {
+      "id": "lucid-shift",
+      "slug": "2026-08-19-lucid-shift",
+      "title": "Lucid Shift",
+      "tagline": "Blink and it's over.",
+      "description": "Lucid Shift — a deep-space lane-switch dodge & collect game. Swipe or use arrows to switch lanes. Grab the orbs, dodge the spikes.",
+      "genre": "arcade",
+      "mechanic": "lane-switch dodge & collect",
+      "theme": "deep-space",
+      "tags": [
+        "arcade",
+        "lane",
+        "arcade",
+        "satisfying"
+      ],
+      "accent": "#5eead4",
+      "accent2": "#fca5a5",
+      "bg": "#04140f",
+      "emoji": "🛣️",
+      "date": "2026-08-19"
+    },
+    {
       "id": "paper-climb",
       "slug": "2026-08-19-paper-climb",
       "title": "Paper Climb",
