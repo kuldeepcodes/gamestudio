@@ -2,6 +2,27 @@
   "updated": "2026-08-18",
   "games": [
     {
+      "id": "paper-junction",
+      "slug": "2026-08-18-paper-junction",
+      "title": "Paper Junction",
+      "tagline": "Master the timing.",
+      "description": "Paper Junction — a desert mirage junction signal control game. You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash.",
+      "genre": "simulation",
+      "mechanic": "junction signal control",
+      "theme": "desert mirage",
+      "tags": [
+        "simulation",
+        "traffic",
+        "arcade",
+        "satisfying"
+      ],
+      "accent": "#f9a8d4",
+      "accent2": "#c084fc",
+      "bg": "#160a1e",
+      "emoji": "🚦",
+      "date": "2026-08-18"
+    },
+    {
       "id": "wild-depot",
       "slug": "2026-08-18-wild-depot",
       "title": "Wild Depot",
@@ -230,27 +251,6 @@
       "accent2": "#f0abfc",
       "bg": "#060814",
       "emoji": "🛸",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "wild-signal-box",
-      "slug": "2026-08-18-wild-signal-box",
-      "title": "Wild Signal Box",
-      "tagline": "Reflexes required.",
-      "description": "Wild Signal Box — a arctic aurora junction signal control game. You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash.",
-      "genre": "simulation",
-      "mechanic": "junction signal control",
-      "theme": "arctic aurora",
-      "tags": [
-        "simulation",
-        "traffic",
-        "arcade",
-        "meditative"
-      ],
-      "accent": "#e879f9",
-      "accent2": "#38bdf8",
-      "bg": "#0a0416",
-      "emoji": "🚦",
       "date": "2026-08-18"
     },
     {

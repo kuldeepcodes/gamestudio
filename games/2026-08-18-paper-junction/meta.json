@@ -1,0 +1,28 @@
+{
+  "id": "paper-junction",
+  "slug": "2026-08-18-paper-junction",
+  "title": "Paper Junction",
+  "tagline": "Master the timing.",
+  "description": "Paper Junction — a desert mirage junction signal control game. You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash.",
+  "genre": "simulation",
+  "mechanic": "junction signal control",
+  "theme": "desert mirage",
+  "tags": [
+    "simulation",
+    "traffic",
+    "arcade",
+    "satisfying"
+  ],
+  "accent": "#f9a8d4",
+  "accent2": "#c084fc",
+  "bg": "#160a1e",
+  "emoji": "🚦",
+  "date": "2026-08-18",
+  "source": "procedural",
+  "brief": {
+    "genre": "color matching",
+    "theme": "desert mirage",
+    "twist": "gravity flips on input",
+    "mood": "satisfying"
+  }
+}

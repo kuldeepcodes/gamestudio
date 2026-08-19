@@ -1,28 +1,28 @@
 window.GAME = {
   meta: {
-    "title": "Wild Signal Box",
-    "tagline": "Reflexes required.",
-    "description": "Wild Signal Box — a arctic aurora junction signal control game. You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash.",
+    "title": "Paper Junction",
+    "tagline": "Master the timing.",
+    "description": "Paper Junction — a desert mirage junction signal control game. You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash.",
     "instructions": "You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash. Tap / Space to switch the lights.",
     "controls": "Tap / Space to switch the lights",
-    "accent": "#e879f9",
-    "accent2": "#38bdf8",
-    "bg": "#0a0416",
-    "width": 480,
-    "height": 720,
+    "accent": "#f9a8d4",
+    "accent2": "#c084fc",
+    "bg": "#160a1e",
+    "width": 640,
+    "height": 480,
     "genre": "simulation",
     "mechanic": "junction signal control",
-    "theme": "arctic aurora",
+    "theme": "desert mirage",
     "tags": [
       "simulation",
       "traffic",
       "arcade",
-      "meditative"
+      "satisfying"
     ],
     "emoji": "🚦"
   },
   create: function (engine) {
-    var P = {"roadW":86,"carSpeed":103,"ramp":3,"spawn":1.198,"patience":6,"maxCars":15,"switchLock":0.45,"accent":"#e879f9","accent2":"#38bdf8","hazard":"#ff5d73"};
+    var P = {"roadW":77,"carSpeed":120.14,"ramp":3,"spawn":0.972,"patience":7.71,"maxCars":15,"switchLock":0.45,"accent":"#f9a8d4","accent2":"#c084fc","hazard":"#ff5d73"};
     var build = function buildTraffic(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
   var cars, greenNS, t, spawnT, passed, switchLock;
