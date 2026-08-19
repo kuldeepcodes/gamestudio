@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"/>
-<meta name="theme-color" content="#0a0416"/>
-<title>Wild Signal Box</title>
-<meta name="description" content="Wild Signal Box — a arctic aurora junction signal control game. You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash."/>
-<meta property="og:title" content="Wild Signal Box"/>
-<meta property="og:description" content="Wild Signal Box — a arctic aurora junction signal control game. You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash."/>
+<meta name="theme-color" content="#060814"/>
+<title>Velvet Rift</title>
+<meta name="description" content="Velvet Rift — a cozy pastel omni-directional dodge &amp; collect game. Glide to dodge the incoming shards and scoop the glowing motes. One hit and it's over."/>
+<meta property="og:title" content="Velvet Rift"/>
+<meta property="og:description" content="Velvet Rift — a cozy pastel omni-directional dodge &amp; collect game. Glide to dodge the incoming shards and scoop the glowing motes. One hit and it's over."/>
 <style>/* GameStudio premium shell — themeable via CSS variables set from each game's meta.
    No external dependencies (no web fonts, images or network) so every game is offline-ready. */
 :root{
@@ -387,129 +387,75 @@ h2{margin:0 0 16px;font-size:22px;font-weight:800}
 </script>
 <script>window.GAME = {
   meta: {
-    "title": "Wild Signal Box",
-    "tagline": "Reflexes required.",
-    "description": "Wild Signal Box — a arctic aurora junction signal control game. You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash.",
-    "instructions": "You control the lights at a busy crossroads. Switch which road gets the green — let two streams into the junction at once and they crash. Tap / Space to switch the lights.",
-    "controls": "Tap / Space to switch the lights",
-    "accent": "#e879f9",
-    "accent2": "#38bdf8",
-    "bg": "#0a0416",
-    "width": 480,
-    "height": 720,
-    "genre": "simulation",
-    "mechanic": "junction signal control",
-    "theme": "arctic aurora",
+    "title": "Velvet Rift",
+    "tagline": "Flow state, unlocked.",
+    "description": "Velvet Rift — a cozy pastel omni-directional dodge & collect game. Glide to dodge the incoming shards and scoop the glowing motes. One hit and it's over.",
+    "instructions": "Glide to dodge the incoming shards and scoop the glowing motes. One hit and it's over. Drag / Arrow keys to move.",
+    "controls": "Drag / Arrow keys to move",
+    "accent": "#93c5fd",
+    "accent2": "#f0abfc",
+    "bg": "#060814",
+    "width": 640,
+    "height": 480,
+    "genre": "survival",
+    "mechanic": "omni-directional dodge & collect",
+    "theme": "cozy pastel",
     "tags": [
-      "simulation",
-      "traffic",
+      "survival",
+      "avoider",
       "arcade",
       "meditative"
     ],
-    "emoji": "🚦"
+    "emoji": "🛸"
   },
   create: function (engine) {
-    var P = {"roadW":86,"carSpeed":103,"ramp":3,"spawn":1.198,"patience":6,"maxCars":15,"switchLock":0.45,"accent":"#e879f9","accent2":"#38bdf8","hazard":"#ff5d73"};
-    var build = function buildTraffic(engine, P) {
+    var P = {"r":13,"follow":19,"kspeed":298,"foeSpeed":167,"foeMin":7,"foeMax":18,"ramp":10,"spawn":1.021,"moteR":9,"motes":3,"accent":"#93c5fd","accent2":"#f0abfc","hazard":"#ff5d73"};
+    var build = function buildAvoider(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
-  var cars, greenNS, t, spawnT, passed, switchLock;
-  var cx = W / 2, cy = H / 2, half = P.roadW / 2;
-  function reset() { cars = []; greenNS = true; t = 0; spawnT = 0.7; passed = 0; switchLock = 0; }
-  function inBox(c) { return c.x > cx - half - 16 && c.x < cx + half + 16 && c.y > cy - half - 16 && c.y < cy + half + 16; }
+  var me, foes, motes, spawnT, t;
+  function reset() { me = { x: W / 2, y: H / 2, r: P.r }; foes = []; motes = []; spawnT = 0.3; t = 0; }
+  function spawnFoe() {
+    var edge = engine.randInt(0, 3), x, y;
+    if (edge === 0) { x = engine.rand(0, W); y = -20; }
+    else if (edge === 1) { x = W + 20; y = engine.rand(0, H); }
+    else if (edge === 2) { x = engine.rand(0, W); y = H + 20; }
+    else { x = -20; y = engine.rand(0, H); }
+    var ang = Math.atan2((H / 2 - y) + engine.rand(-140, 140), (W / 2 - x) + engine.rand(-140, 140));
+    var sp = P.foeSpeed * engine.rand(0.8, 1.3) + t * P.ramp;
+    foes.push({ x: x, y: y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, r: engine.rand(P.foeMin, P.foeMax), rot: engine.rand(0, 6) });
+  }
+  function spawnMote() { motes.push({ x: engine.rand(30, W - 30), y: engine.rand(30, H - 30), r: P.moteR, pulse: engine.rand(0, 6) }); }
   return {
     setup: reset, reset: reset,
     update: function (dt) {
       t += dt;
-      if (switchLock > 0) switchLock -= dt;
-      var toggle = input.justPressed("action") || input.pointer.justDown ||
-        input.justPressed("left") || input.justPressed("right") || input.justPressed("up") || input.justPressed("down");
-      if (toggle && switchLock <= 0) { greenNS = !greenNS; S.tick(); switchLock = P.switchLock; }
-
-      var speed = P.carSpeed + t * P.ramp;
-      for (var i = cars.length - 1; i >= 0; i--) {
-        var c = cars[i];
-        var isNS = c.dir === 0 || c.dir === 2;
-        var green = isNS === greenNS;
-        // distance to the stop line for this approach
-        var toStop;
-        if (c.dir === 0) toStop = (cy - half - 18) - c.y;
-        else if (c.dir === 2) toStop = c.y - (cy + half + 18);
-        else if (c.dir === 1) toStop = c.x - (cx + half + 18);
-        else toStop = (cx - half - 18) - c.x;
-
-        var blocked = false;
-        if (!green && toStop > 0 && toStop < 6) blocked = true;
-        // queue behind the car ahead
-        for (var j = 0; j < cars.length; j++) {
-          var o = cars[j];
-          if (o === c || o.dir !== c.dir) continue;
-          if (isNS) { if (c.dir === 0 && o.y > c.y && o.y - c.y < 34) blocked = true; if (c.dir === 2 && o.y < c.y && c.y - o.y < 34) blocked = true; }
-          else { if (c.dir === 1 && o.x < c.x && c.x - o.x < 34) blocked = true; if (c.dir === 3 && o.x > c.x && o.x - c.x < 34) blocked = true; }
-        }
-        if (!blocked) {
-          if (c.dir === 0) c.y += speed * dt; else if (c.dir === 2) c.y -= speed * dt;
-          else if (c.dir === 1) c.x -= speed * dt; else c.x += speed * dt;
-          c.wait = 0;
-        } else { c.wait += dt; if (c.wait > P.patience) { S.hit(); engine.shake(16); S.over(); engine.gameOver(); return; } }
-
-        if (c.x < -60 || c.x > W + 60 || c.y < -60 || c.y > H + 60) { cars.splice(i, 1); passed++; engine.addScore(5); continue; }
+      if (input.pointer.down) { me.x += (input.pointer.x - me.x) * Math.min(1, dt * P.follow); me.y += (input.pointer.y - me.y) * Math.min(1, dt * P.follow); }
+      var d = input.dir(); me.x += d.x * P.kspeed * dt; me.y += d.y * P.kspeed * dt;
+      me.x = engine.clamp(me.x, me.r, W - me.r); me.y = engine.clamp(me.y, me.r, H - me.r);
+      spawnT -= dt; if (spawnT <= 0) { spawnFoe(); if (t > 8 && engine.chance(0.5)) spawnFoe(); spawnT = Math.max(0.28, P.spawn - t * 0.01); }
+      while (motes.length < P.motes) spawnMote();
+      for (var i = foes.length - 1; i >= 0; i--) {
+        var f = foes[i]; f.x += f.vx * dt; f.y += f.vy * dt; f.rot += dt * 2;
+        if (f.x < -50 || f.x > W + 50 || f.y < -50 || f.y > H + 50) { foes.splice(i, 1); engine.addScore(1); continue; }
+        if (engine.dist(f.x, f.y, me.x, me.y) < f.r + me.r - 3) { S.hit(); engine.shake(18); engine.particles.burst(me.x, me.y, { count: 36, color: P.hazard, speed: 230, life: 0.7, gravity: 80 }); engine.gameOver(); return; }
       }
-      // collision: two cars from crossing axes inside the junction
-      for (var a = 0; a < cars.length; a++) {
-        if (!inBox(cars[a])) continue;
-        for (var b = a + 1; b < cars.length; b++) {
-          if (!inBox(cars[b])) continue;
-          var aNS = cars[a].dir === 0 || cars[a].dir === 2, bNS = cars[b].dir === 0 || cars[b].dir === 2;
-          if (aNS !== bNS && engine.dist(cars[a].x, cars[a].y, cars[b].x, cars[b].y) < 30) {
-            S.hit(); engine.shake(26);
-            engine.particles.burst((cars[a].x + cars[b].x) / 2, (cars[a].y + cars[b].y) / 2, { count: 40, color: P.hazard, speed: 260, life: 0.8, gravity: 60 });
-            S.over(); engine.gameOver(); return;
-          }
-        }
-      }
-      spawnT -= dt;
-      if (spawnT <= 0 && cars.length < P.maxCars) {
-        var dir = engine.randInt(0, 3), c2 = { dir: dir, wait: 0, hue: engine.chance(0.5) ? P.accent : P.accent2 };
-        if (dir === 0) { c2.x = cx - 16; c2.y = -40; } else if (dir === 2) { c2.x = cx + 16; c2.y = H + 40; }
-        else if (dir === 1) { c2.x = W + 40; c2.y = cy - 16; } else { c2.x = -40; c2.y = cy + 16; }
-        var tooClose = false;
-        for (var k = 0; k < cars.length; k++) { if (cars[k].dir === dir && engine.dist(cars[k].x, cars[k].y, c2.x, c2.y) < 46) tooClose = true; }
-        if (!tooClose) cars.push(c2);
-        spawnT = Math.max(0.42, P.spawn - t * 0.014);
+      for (var j = motes.length - 1; j >= 0; j--) {
+        var m = motes[j]; m.pulse += dt * 4;
+        if (engine.dist(m.x, m.y, me.x, me.y) < m.r + me.r) { engine.addScore(5); S.coin(); engine.particles.burst(m.x, m.y, { count: 14, color: P.accent, speed: 150, life: 0.5, gravity: 30 }); motes.splice(j, 1); }
       }
     },
     render: function (ctx) {
-      ctx.fillStyle = "rgba(255,255,255,.05)";
-      ctx.beginPath(); ctx.rect(cx - half, 0, P.roadW, H); ctx.fill();
-      ctx.beginPath(); ctx.rect(0, cy - half, W, P.roadW); ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.lineWidth = 2;
-      for (var d = 0; d < 14; d++) {
-        var yy = d * 44 + 10;
-        if (yy < cy - half - 10 || yy > cy + half + 10) { ctx.beginPath(); ctx.moveTo(cx, yy); ctx.lineTo(cx, yy + 20); ctx.stroke(); }
-        var xx = d * 44 + 10;
-        if (xx < cx - half - 10 || xx > cx + half + 10) { ctx.beginPath(); ctx.moveTo(xx, cy); ctx.lineTo(xx + 20, cy); ctx.stroke(); }
+      for (var j = 0; j < motes.length; j++) { var m = motes[j]; var pr = m.r + Math.sin(m.pulse) * 2; ctx.shadowColor = P.accent; ctx.shadowBlur = 14; ctx.fillStyle = P.accent; ctx.beginPath(); ctx.arc(m.x, m.y, pr, 0, 6.283); ctx.fill(); }
+      ctx.shadowBlur = 0;
+      for (var i = 0; i < foes.length; i++) {
+        var f = foes[i]; ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rot); ctx.shadowColor = P.hazard; ctx.shadowBlur = 14; ctx.fillStyle = P.hazard; ctx.beginPath();
+        for (var k = 0; k < 5; k++) { var a = k * 1.2566; var fn = k ? "lineTo" : "moveTo"; ctx[fn](Math.cos(a) * f.r, Math.sin(a) * f.r); }
+        ctx.closePath(); ctx.fill(); ctx.restore();
       }
-      for (var i = 0; i < cars.length; i++) {
-        var c = cars[i], ns = c.dir === 0 || c.dir === 2;
-        ctx.save(); ctx.translate(c.x, c.y);
-        ctx.shadowColor = c.hue; ctx.shadowBlur = 12; ctx.fillStyle = c.hue;
-        ctx.beginPath();
-        if (ns) ctx.rect(-11, -17, 22, 34); else ctx.rect(-17, -11, 34, 22);
-        ctx.fill(); ctx.restore();
-      }
-      // signal heads
-      var g1 = greenNS ? "#4ade80" : P.hazard, g2 = greenNS ? P.hazard : "#4ade80";
-      ctx.save();
-      ctx.shadowBlur = 16; ctx.shadowColor = g1; ctx.fillStyle = g1;
-      ctx.beginPath(); ctx.arc(cx - half - 20, cy - half - 20, 9, 0, 6.283); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx + half + 20, cy + half + 20, 9, 0, 6.283); ctx.fill();
-      ctx.shadowColor = g2; ctx.fillStyle = g2;
-      ctx.beginPath(); ctx.arc(cx + half + 20, cy - half - 20, 9, 0, 6.283); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx - half - 20, cy + half + 20, 9, 0, 6.283); ctx.fill();
-      ctx.restore();
-      ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.textAlign = "left";
-      ctx.font = "600 12px system-ui, -apple-system, Segoe UI, sans-serif";
-      ctx.fillText("cleared " + passed, 22, 22);
+      ctx.shadowBlur = 0;
+      ctx.save(); ctx.translate(me.x, me.y); ctx.shadowColor = P.accent2; ctx.shadowBlur = 20;
+      var g = ctx.createRadialGradient(0, 0, 2, 0, 0, me.r); g.addColorStop(0, "#ffffff"); g.addColorStop(1, P.accent2);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, me.r, 0, 6.283); ctx.fill(); ctx.restore();
     }
   };
 };
