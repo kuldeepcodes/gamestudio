@@ -1,0 +1,31 @@
+{
+  "id": "chrome-targets",
+  "slug": "2026-08-19-chrome-targets",
+  "title": "Chrome Targets",
+  "tagline": "Simple. Ruthless.",
+  "description": "Chrome Targets — a molten lava color-target tap test game. Tap the glowing rings before they fade. Never tap a crossed one, and don't let too many good ones slip away.",
+  "genre": "reflex",
+  "mechanic": "color-target tap test",
+  "theme": "molten lava",
+  "mods": [
+    "chains"
+  ],
+  "tags": [
+    "reflex",
+    "reflex",
+    "arcade",
+    "playful"
+  ],
+  "accent": "#8ab4ff",
+  "accent2": "#b388ff",
+  "bg": "#05070f",
+  "emoji": "🎯",
+  "date": "2026-08-19",
+  "source": "procedural",
+  "brief": {
+    "genre": "falling-block stacker",
+    "theme": "molten lava",
+    "twist": "two things must be controlled at once",
+    "mood": "playful"
+  }
+}
