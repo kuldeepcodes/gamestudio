@@ -1,8 +1,8 @@
 window.GAME = {
   meta: {
-    "title": "Deep Depot",
-    "tagline": "Deceptively simple.",
-    "description": "Deep Depot — a deep-space recycling line sorting game. You're running the sorting line at a recycling plant. Steer each item down the chute into the matching bin — three missorts and the line shuts down.",
+    "title": "Wild Depot",
+    "tagline": "Nerves of steel.",
+    "description": "Wild Depot — a crystal cavern recycling line sorting game. You're running the sorting line at a recycling plant. Steer each item down the chute into the matching bin — three missorts and the line shuts down.",
     "instructions": "You're running the sorting line at a recycling plant. Steer each item down the chute into the matching bin — three missorts and the line shuts down. Tap a bin / Arrows to steer the chute.",
     "controls": "Tap a bin / Arrows to steer the chute",
     "accent": "#8ab4ff",
@@ -12,17 +12,17 @@ window.GAME = {
     "height": 720,
     "genre": "simulation",
     "mechanic": "recycling line sorting",
-    "theme": "deep-space",
+    "theme": "crystal cavern",
     "tags": [
       "simulation",
       "sorter",
       "arcade",
-      "meditative"
+      "tense"
     ],
     "emoji": "♻️"
   },
   create: function (engine) {
-    var P = {"fall":123,"ramp":7,"steer":9,"spawn":1.023,"itemR":15,"maxStrikes":3,"cats":[{"n":"PAPER","c":"#8ab4ff"},{"n":"GLASS","c":"#b388ff"},{"n":"METAL","c":"#f6c453"}],"accent":"#8ab4ff","accent2":"#b388ff","hazard":"#ff5d73"};
+    var P = {"fall":200,"ramp":4,"steer":9,"spawn":0.949,"itemR":18,"maxStrikes":3,"cats":[{"n":"PAPER","c":"#8ab4ff"},{"n":"GLASS","c":"#b388ff"},{"n":"METAL","c":"#f6c453"}],"accent":"#8ab4ff","accent2":"#b388ff","hazard":"#ff5d73"};
     var build = function buildSorter(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
   var items, sel, strikes, t, spawnT, pops;

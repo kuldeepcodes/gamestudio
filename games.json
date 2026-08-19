@@ -2,6 +2,27 @@
   "updated": "2026-08-18",
   "games": [
     {
+      "id": "wild-depot",
+      "slug": "2026-08-18-wild-depot",
+      "title": "Wild Depot",
+      "tagline": "Nerves of steel.",
+      "description": "Wild Depot — a crystal cavern recycling line sorting game. You're running the sorting line at a recycling plant. Steer each item down the chute into the matching bin — three missorts and the line shuts down.",
+      "genre": "simulation",
+      "mechanic": "recycling line sorting",
+      "theme": "crystal cavern",
+      "tags": [
+        "simulation",
+        "sorter",
+        "arcade",
+        "tense"
+      ],
+      "accent": "#8ab4ff",
+      "accent2": "#b388ff",
+      "bg": "#05070f",
+      "emoji": "♻️",
+      "date": "2026-08-18"
+    },
+    {
       "id": "feral-last-order",
       "slug": "2026-08-18-feral-last-order",
       "title": "Feral Last Order",
@@ -230,27 +251,6 @@
       "accent2": "#38bdf8",
       "bg": "#0a0416",
       "emoji": "🚦",
-      "date": "2026-08-18"
-    },
-    {
-      "id": "deep-depot",
-      "slug": "2026-08-18-deep-depot",
-      "title": "Deep Depot",
-      "tagline": "Deceptively simple.",
-      "description": "Deep Depot — a deep-space recycling line sorting game. You're running the sorting line at a recycling plant. Steer each item down the chute into the matching bin — three missorts and the line shuts down.",
-      "genre": "simulation",
-      "mechanic": "recycling line sorting",
-      "theme": "deep-space",
-      "tags": [
-        "simulation",
-        "sorter",
-        "arcade",
-        "meditative"
-      ],
-      "accent": "#8ab4ff",
-      "accent2": "#b388ff",
-      "bg": "#05070f",
-      "emoji": "♻️",
       "date": "2026-08-18"
     },
     {
