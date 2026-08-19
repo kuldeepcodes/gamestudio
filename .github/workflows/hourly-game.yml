@@ -20,11 +20,11 @@ on:
         required: false
         type: string
 
-# Let GITHUB_TOKEN push a branch and open a PR.
+# Only needs to commit to main — no pull requests are created.
 permissions:
   contents: write
-  pull-requests: write
 
+# Runs are serialised so two drops can never race each other to push main.
 concurrency:
   group: hourly-game
   cancel-in-progress: false
@@ -36,11 +36,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # Games awaiting review live only on their own branches. Fetch them so the
-      # generator can count them and keep rotating instead of repeating an archetype.
-      - name: Fetch pending game branches
-        run: git fetch --no-tags --depth=1 origin "+refs/heads/game/*:refs/remotes/origin/game/*" || true
+        with:
+          # full history so the drop can rebase onto main if it moved mid-run
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -56,6 +54,10 @@ jobs:
         env:
           GS_MODEL: ${{ inputs.model }}
           GS_SEED: ${{ inputs.seed }}
+          # Cap how many games may share one mechanic. Unset = keep every game (default).
+          # Setting this DELETES older games of the same mechanic, and drops now land on
+          # main unreviewed, so enable it only if you want the gallery pruned automatically.
+          #   GS_MAX_PER_MECHANIC: "1"
           # Default backend is a local procedural generator (no key needed).
           # Optional: set repo secrets to author games with your own OpenAI-compatible model instead.
           GS_LLM_KEY: ${{ secrets.GS_LLM_KEY }}
@@ -70,36 +72,76 @@ jobs:
         if: steps.gen.outputs.created == 'true'
         run: node scripts/rebuild-all.mjs
 
-      - name: Open pull request
+      - name: Commit and push to main
         if: steps.gen.outputs.created == 'true'
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ github.token }}
-          base: main
-          branch: ${{ steps.gen.outputs.branch }}
-          delete-branch: true
-          add-paths: |
-            games/**
-            games.json
-          commit-message: "feat(game): ${{ steps.gen.outputs.title }} ${{ steps.gen.outputs.emoji }}"
-          title: "🎮 New game: ${{ steps.gen.outputs.title }} ${{ steps.gen.outputs.emoji }}"
-          labels: |
-            game
-            automated
-          body: |
-            ### ${{ steps.gen.outputs.emoji }} ${{ steps.gen.outputs.title }}
-            > ${{ steps.gen.outputs.tagline }}
+        env:
+          TITLE: ${{ steps.gen.outputs.title }}
+          EMOJI: ${{ steps.gen.outputs.emoji }}
+          SLUG: ${{ steps.gen.outputs.slug }}
+          GENRE: ${{ steps.gen.outputs.genre }}
+          THEME: ${{ steps.gen.outputs.theme }}
+          RETIRED: ${{ steps.gen.outputs.retired }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-            A fresh, self-contained micro-game — invented and built automatically.
+          # -A so retirements (deletions) are staged too, not just additions
+          git add -A -- games games.json
 
-            - **Genre:** ${{ steps.gen.outputs.genre }}
-            - **Theme:** ${{ steps.gen.outputs.theme }}
-            - **Folder:** `games/${{ steps.gen.outputs.slug }}/`
-            - **Retires:** ${{ steps.gen.outputs.retired || 'nothing — this mechanic is new to the gallery' }}
+          if git diff --cached --quiet; then
+            echo "No changes to publish."
+            exit 0
+          fi
 
-            It already passed an automated headless smoke test (loads, starts, takes input, runs 100+ frames with no errors).
+          {
+            echo "feat(game): $TITLE $EMOJI"
+            echo
+            echo "Genre: $GENRE | Theme: $THEME | Folder: games/$SLUG/"
+            if [ -n "${RETIRED:-}" ]; then echo "Retires: $RETIRED"; fi
+            echo
+            echo "Generated and smoke-tested automatically by .github/workflows/hourly-game.yml."
+          } > /tmp/commit-msg.txt
 
-            **Preview locally:** open `games/${{ steps.gen.outputs.slug }}/index.html` in a browser.
-            **Publish:** merge this PR — GitHub Pages redeploys and it appears on the gallery homepage.
+          git commit -F /tmp/commit-msg.txt
 
-            _Generated automatically by `.github/workflows/hourly-game.yml`._
+          # main may have moved while this run was working (a manual push, or a
+          # long-running drop). Rebase onto it and retry rather than failing the drop.
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo "Published to main on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing onto origin/main and retrying."
+            git fetch origin main
+            # keep our generated files if the same paths were touched upstream
+            git rebase origin/main || { git rebase --abort; echo "Rebase failed."; exit 1; }
+            sleep $((attempt * 3))
+          done
+          echo "Could not push to main after 5 attempts."
+          exit 1
+
+      - name: Summary
+        if: steps.gen.outputs.created == 'true'
+        env:
+          TITLE: ${{ steps.gen.outputs.title }}
+          EMOJI: ${{ steps.gen.outputs.emoji }}
+          TAGLINE: ${{ steps.gen.outputs.tagline }}
+          SLUG: ${{ steps.gen.outputs.slug }}
+          GENRE: ${{ steps.gen.outputs.genre }}
+          THEME: ${{ steps.gen.outputs.theme }}
+          RETIRED: ${{ steps.gen.outputs.retired }}
+        run: |
+          {
+            echo "### $EMOJI $TITLE"
+            echo "> $TAGLINE"
+            echo
+            echo "- **Genre:** $GENRE"
+            echo "- **Theme:** $THEME"
+            echo "- **Folder:** \`games/$SLUG/\`"
+            echo "- **Retired:** ${RETIRED:-nothing}"
+            echo
+            echo "Published straight to \`main\` — GitHub Pages redeploys automatically."
+            echo
+            echo "**Play:** https://kuldeepcodes.github.io/gamestudio/games/$SLUG/"
+          } >> "$GITHUB_STEP_SUMMARY"

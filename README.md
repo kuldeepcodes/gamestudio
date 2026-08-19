@@ -6,8 +6,8 @@ Live site → **https://kuldeepcodes.github.io/gamestudio/**
 
 On a schedule a GitHub Actions workflow dreams up a fresh idea (a distinct genre + mechanic +
 theme, never a reskin), implements it against a polished shared game engine, **smoke-tests it
-headlessly**, and opens a **Pull Request**. You review it and merge to publish — the game then
-appears on the gallery homepage.
+headlessly**, and — if it passes — **commits it straight to `main`**. GitHub Pages redeploys and
+the game appears on the gallery homepage a minute later. No pull request, no manual step.
 
 ---
 
@@ -22,9 +22,13 @@ appears on the gallery homepage.
 │  smoke.mjs   → headless (jsdom) test: loads, starts, takes input, 100+ frames   │
 │  retry/repair→ if it errors, try another variant (or ask the model); clean-only │
 │  manifest    → register in games.json + write meta.json                         │
-│  → opens a Pull Request  ──►  you review & merge  ──►  GitHub Pages redeploys    │
+│  → commits straight to main  ──►  GitHub Pages redeploys automatically          │
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+**The smoke test is the gate.** Nothing is committed unless the game loads, starts, accepts input
+and survives 100+ frames without a single console error — a game that fails is retried with a
+different variant, and if nothing passes the run exits without touching `main`.
 
 The default generator is **local and free**: a library of hand-crafted, pre-tested premium game
 archetypes combined with the idea engine (theme × palette × orientation × tuning) to yield
@@ -44,12 +48,17 @@ The pool spans two flavours:
 
 1. *Strict least-recently-used archetype rotation* — each archetype is ranked by how long since it
    last shipped and the most overdue one wins, so all 13 cycle before any repeats. At the default
-   4-hourly cadence that is **~52 hours between repeats of a mechanic**. Games still awaiting review
-   in an open PR count too, so rotation keeps advancing even if you merge in batches.
+   4-hourly cadence that is **~52 hours between repeats of a mechanic**.
 2. *Collision-free naming* — titles are checked against the entire gallery before use, and taglines
    avoid the last six used.
 3. *Per-archetype parameter jitter* — speeds, sizes and layouts are re-rolled within safe bounds, so
    even two games of the same archetype play differently.
+
+**Nothing is ever deleted.** Once every archetype is represented the gallery keeps growing, so a
+mechanic does eventually appear twice — separated by ~52 hours and differing in tuning, theme,
+palette and name. If you would rather cap it, set `GS_MAX_PER_MECHANIC` (e.g. `"1"`) in the
+workflow's `env:`; be aware that **deletes** older games of that mechanic, and since drops now land
+on `main` without review there is no pull request in which to notice it.
 
 Every game is a true **single self-contained HTML page** in **its own folder** — premium and
 consistent because they all share one polished engine.
@@ -72,7 +81,7 @@ AGENTS.md               Full generation contract (read this to contribute/tune)
 **Nothing is built at deploy time.** The site is plain static files. Pages is set to *deploy from a
 branch*, so GitHub's own `pages-build-deployment` job — a synthetic workflow, not a file in this
 repo — just copies `main` to the CDN when you merge. The only workflow here is
-`.github/workflows/hourly-game.yml`, which generates a game and opens a PR; it never touches Pages.
+`.github/workflows/hourly-game.yml`, which generates a game and commits it; it never touches Pages.
 
 `scripts/build-game.mjs` is **not** a bundler, minifier or transpiler. It is string substitution that
 runs once, when a game is created, inlining `engine.js` + `shell.html` + `shell.css` + that game's
@@ -91,7 +100,7 @@ for roughly an 80% smaller `games/` tree and shared browser caching.
 ## Run it yourself
 
 **Trigger a game now:** Actions → *Game drop* → **Run workflow** (optionally pass a
-`model` or `seed`). It opens a PR you can review.
+`model` or `seed`). It commits straight to `main`.
 
 **Local pipeline test (no key, the real production path):**
 ```bash
@@ -119,7 +128,7 @@ node scripts/lib/smoke.mjs games/<slug>/index.html   # headless smoke test (exit
 
 - **Pages:** enabled, deploy from `main` (root). Site: `https://kuldeepcodes.github.io/gamestudio/`.
 - **Actions → General → Workflow permissions:** *Read and write* **and** *Allow GitHub Actions
-  to create and approve pull requests* (so the scheduled job can open PRs with the built-in token).
+  * (the job commits to `main` with the built-in token; it no longer needs PR permissions).
 - **No AI key required** — the default generator runs entirely on the Actions runner.
 - **No personal access token required.** The workflow authenticates with `${{ github.token }}`, the
   short-lived token GitHub mints for each run. Nothing runs on, or is needed from, your own machine.

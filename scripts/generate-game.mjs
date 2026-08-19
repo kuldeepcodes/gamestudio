@@ -133,10 +133,10 @@ async function main() {
   manifest.games = manifest.games || [];
   manifest.games.unshift(entry);
 
-  // Keep the gallery free of duplicates. With a finite archetype pool every mechanic
-  // eventually comes round again, so once a newer game of the same mechanic ships the
-  // older one is retired rather than left sitting next to it. Set GS_MAX_PER_MECHANIC
-  // to keep more than one (0 disables retirement entirely).
+  // Optionally cap how many games share a mechanic. This deletes older games, so it is
+  // OFF by default: drops now land straight on main with no pull request to review, and
+  // an unreviewed deletion is exactly what got reverted when Golden Lanes silently
+  // removed Origami Rush. Set GS_MAX_PER_MECHANIC=1 (or 2, 3…) to enable capping.
   const retired = retireSupersededGames(manifest, entry);
   writeManifest(ROOT, manifest);
 
@@ -149,10 +149,12 @@ async function main() {
   });
 }
 
-// Drop older games that share the new game's mechanic, newest kept first.
+// Drop older games sharing the new game's mechanic, newest kept first.
+// Disabled unless GS_MAX_PER_MECHANIC is set to a positive integer.
 function retireSupersededGames(manifest, entry) {
   const raw = process.env.GS_MAX_PER_MECHANIC;
-  const keep = raw === undefined || raw === "" ? 1 : Number(raw);
+  if (raw === undefined || raw === "") return [];
+  const keep = Number(raw);
   if (!Number.isFinite(keep) || keep < 1) return [];
   const mech = String(entry.mechanic || "").toLowerCase().trim();
   if (!mech) return [];

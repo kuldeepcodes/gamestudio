@@ -18,7 +18,7 @@ human (or agent) contributor must follow so that quality and novelty stay high.
 4. **Genuinely new every time.** Each game must differ from every prior entry in `games.json`
    across **genre AND core mechanic AND theme** — not a reskin. Read the manifest first.
 5. **It must actually run.** No console errors; the core loop and game-over must be reachable.
-   The pipeline enforces this with an automated headless smoke test before any PR is opened.
+   The pipeline enforces this with an automated headless smoke test before anything is committed.
 
 ## How a game is built (engine-based)
 
@@ -78,10 +78,11 @@ must be static data + a `create()` function only. Do all game logic inside `crea
 3. Build it (`build-game.mjs`) → **smoke-test** it headlessly (`scripts/lib/smoke.mjs`).
 4. If it errors, try another variant (procedural) or ask the model to **repair** it (LLM). Only a
    clean game ships.
-5. Register it in `games.json`, write `meta.json`, and the workflow opens a **Pull Request**.
+5. Register it in `games.json`, write `meta.json`, and the workflow **commits straight to `main`**.
 
-You review the PR (preview locally), then **merge to publish** — GitHub Pages redeploys and the
-game appears on the gallery homepage.
+Publishing is automatic: GitHub Pages redeploys on every push to `main`, so the game appears on the
+gallery homepage about a minute later. There is no review step — **the smoke test is the gate**, so
+never weaken it, and never commit a game that has not passed it.
 
 ## Manifest (`games.json`)
 
