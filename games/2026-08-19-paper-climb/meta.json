@@ -1,0 +1,28 @@
+{
+  "id": "paper-climb",
+  "slug": "2026-08-19-paper-climb",
+  "title": "Paper Climb",
+  "tagline": "Just one more try.",
+  "description": "Paper Climb — a zen garden precision block stacking game. Tap to drop each block on the one below. Overhang gets sliced off — miss completely and the tower falls.",
+  "genre": "timing",
+  "mechanic": "precision block stacking",
+  "theme": "zen garden",
+  "tags": [
+    "timing",
+    "stacker",
+    "arcade",
+    "playful"
+  ],
+  "accent": "#e879f9",
+  "accent2": "#38bdf8",
+  "bg": "#0a0416",
+  "emoji": "🏗️",
+  "date": "2026-08-19",
+  "source": "procedural",
+  "brief": {
+    "genre": "tower stacking",
+    "theme": "zen garden",
+    "twist": "you paint the arena as you move",
+    "mood": "playful"
+  }
+}
