@@ -33,16 +33,23 @@ function buildAvoider(engine, P) {
       t += dt;
       if (input.pointer.down) { me.x += (input.pointer.x - me.x) * Math.min(1, dt * P.follow); me.y += (input.pointer.y - me.y) * Math.min(1, dt * P.follow); }
       var d = input.dir(); me.x += d.x * P.kspeed * dt; me.y += d.y * P.kspeed * dt;
-      me.x = engine.clamp(me.x, me.r, W - me.r); me.y = engine.clamp(me.y, me.r, H - me.r);
+      // shrink: the safe area closes in, so late runs are fought in a small box
+      var inset = P.m_shrink ? Math.min(Math.min(W, H) * 0.3, t * 3.2) : 0;
+      me.x = engine.clamp(me.x, me.r + inset, W - me.r - inset); me.y = engine.clamp(me.y, me.r + inset, H - me.r - inset);
       spawnT -= dt; if (spawnT <= 0) { spawnFoe(); if (t > 8 && engine.chance(0.5)) spawnFoe(); spawnT = Math.max(0.28, P.spawn - t * 0.01); }
       while (motes.length < P.motes) spawnMote();
       for (var i = foes.length - 1; i >= 0; i--) {
-        var f = foes[i]; f.x += f.vx * dt; f.y += f.vy * dt; f.rot += dt * 2;
+        var f = foes[i];
+        // orbit: shards curve instead of flying straight, so you cannot just sidestep
+        if (P.m_orbit) { var ang = Math.atan2(f.vy, f.vx) + dt * 1.15; var sp = Math.sqrt(f.vx * f.vx + f.vy * f.vy); f.vx = Math.cos(ang) * sp; f.vy = Math.sin(ang) * sp; }
+        f.x += f.vx * dt; f.y += f.vy * dt; f.rot += dt * 2;
         if (f.x < -50 || f.x > W + 50 || f.y < -50 || f.y > H + 50) { foes.splice(i, 1); engine.addScore(1); continue; }
         if (engine.dist(f.x, f.y, me.x, me.y) < f.r + me.r - 3) { S.hit(); engine.shake(18); engine.particles.burst(me.x, me.y, { count: 36, color: P.hazard, speed: 230, life: 0.7, gravity: 80 }); engine.gameOver(); return; }
       }
       for (var j = motes.length - 1; j >= 0; j--) {
         var m = motes[j]; m.pulse += dt * 4;
+        // magnet: motes drift toward you, trading dodging room for easier pickups
+        if (P.m_magnet) { var dx = me.x - m.x, dy = me.y - m.y, dd = Math.sqrt(dx * dx + dy * dy) || 1; if (dd < 190) { m.x += (dx / dd) * 46 * dt; m.y += (dy / dd) * 46 * dt; } }
         if (engine.dist(m.x, m.y, me.x, me.y) < m.r + me.r) { engine.addScore(5); S.coin(); engine.particles.burst(m.x, m.y, { count: 14, color: P.accent, speed: 150, life: 0.5, gravity: 30 }); motes.splice(j, 1); }
       }
     },
@@ -65,7 +72,7 @@ function buildAvoider(engine, P) {
 function buildFlapper(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
   var bx = Math.round(W * 0.3), y, vy, walls, t, started;
-  function addWall(x) { var gy = engine.rand(P.gap * 0.6 + 50, H - P.gap * 0.6 - 50); walls.push({ x: x, gy: gy, scored: false }); }
+  function addWall(x) { var gy = engine.rand(P.gap * 0.6 + 50, H - P.gap * 0.6 - 50); walls.push({ x: x, gy: gy, base: gy, seed: engine.rand(0, 6.283), ph: 0, scored: false }); }
   function reset() { y = H / 2; vy = 0; walls = []; t = 0; started = false; addWall(W + 40); addWall(W + 40 + P.gapX); addWall(W + 40 + P.gapX * 2); }
   function over() { S.hit(); engine.shake(16); engine.particles.burst(bx, y, { count: 30, color: P.hazard, speed: 200, life: 0.6, gravity: 220 }); engine.gameOver(); }
   function flap() { vy = P.flap; S.jump(); engine.particles.burst(bx, y + P.r, { count: 6, color: P.accent2, speed: 70, life: 0.3, gravity: 60 }); started = true; }
@@ -76,21 +83,28 @@ function buildFlapper(engine, P) {
       if (!started) return;
       t += dt; var sp = P.scroll + t * P.ramp;
       vy += P.grav * dt; if (vy > P.vmax) vy = P.vmax; y += vy * dt;
+      // drift: a vertical current pushes you off the line you were holding
+      if (P.m_drift) y += Math.sin(t * 1.3) * 34 * dt;
       if (y > H - P.r) { y = H - P.r; return over(); }
       if (y < P.r) { y = P.r; if (vy < 0) vy = 0; }
       for (var i = walls.length - 1; i >= 0; i--) {
         var wl = walls[i]; wl.x -= sp * dt;
+        // movingGaps: each gap slides up and down, so the opening is a moving target
+        if (P.m_movingGaps) { wl.ph = (wl.ph || 0) + dt; wl.gy = wl.base + Math.sin(wl.ph * 1.5 + wl.seed) * (H * 0.13); }
+        // narrowing: the gap tightens the further you get
+        var gap = P.m_narrowing ? Math.max(P.gap * 0.55, P.gap - t * 3.4) : P.gap;
         if (!wl.scored && wl.x + P.wallW < bx - P.r) { wl.scored = true; engine.addScore(1); S.coin(); }
-        if (bx + P.r > wl.x && bx - P.r < wl.x + P.wallW && (y - P.r < wl.gy - P.gap / 2 || y + P.r > wl.gy + P.gap / 2)) { return over(); }
+        if (bx + P.r > wl.x && bx - P.r < wl.x + P.wallW && (y - P.r < wl.gy - gap / 2 || y + P.r > wl.gy + gap / 2)) { return over(); }
         if (wl.x + P.wallW < -20) walls.splice(i, 1);
       }
       var last = walls[walls.length - 1]; if (!last || last.x < W - P.gapX) addWall(W + 40);
     },
     render: function (ctx) {
+      var gapR = P.m_narrowing ? Math.max(P.gap * 0.55, P.gap - t * 3.4) : P.gap;
       for (var i = 0; i < walls.length; i++) {
         var wl = walls[i]; ctx.fillStyle = P.accent; ctx.shadowColor = P.accent; ctx.shadowBlur = 12;
-        ctx.fillRect(wl.x, 0, P.wallW, wl.gy - P.gap / 2);
-        ctx.fillRect(wl.x, wl.gy + P.gap / 2, P.wallW, H - (wl.gy + P.gap / 2));
+        ctx.fillRect(wl.x, 0, P.wallW, wl.gy - gapR / 2);
+        ctx.fillRect(wl.x, wl.gy + gapR / 2, P.wallW, H - (wl.gy + gapR / 2));
       }
       ctx.shadowBlur = 0;
       ctx.save(); ctx.translate(bx, y); ctx.rotate(engine.clamp(Math.atan2(vy, 260), -0.6, 0.9));
@@ -104,19 +118,32 @@ function buildFlapper(engine, P) {
 
 function buildLane(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
-  var lanes = P.lanes, lane, px, py = Math.round(H * 0.82), items, spawnT, t;
-  function laneX(i) { return W * (i + 0.5) / lanes; }
-  function reset() { lane = Math.floor(lanes / 2); px = laneX(lane); items = []; spawnT = 0.4; t = 0; }
+  var lanes = P.lanes, lane, px, py = Math.round(H * 0.82), items, spawnT, t, sway;
+  // shiftLanes: the whole road slides sideways, so a lane is never where you left it
+  function laneX(i) { return W * (i + 0.5) / lanes + (P.m_shiftLanes ? Math.sin(sway * 0.7) * (W / lanes) * 0.42 : 0); }
+  function reset() { sway = 0; lane = Math.floor(lanes / 2); px = laneX(lane); items = []; spawnT = 0.4; t = 0; }
   function move(d) { lane = engine.clamp(lane + d, 0, lanes - 1); S.blip(); }
   return {
     setup: reset, reset: reset,
     update: function (dt) {
-      t += dt;
+      t += dt; sway += dt;
       var sw = input.consumeSwipe(); if (sw === "left") move(-1); else if (sw === "right") move(1);
       if (input.justPressed("left")) move(-1); if (input.justPressed("right")) move(1);
       px += (laneX(lane) - px) * Math.min(1, dt * P.slide);
-      spawnT -= dt; if (spawnT <= 0) { var li = engine.randInt(0, lanes - 1); items.push({ l: li, y: -30, bad: engine.chance(P.badChance), r: P.itemR, rot: engine.rand(0, 6) }); spawnT = Math.max(0.3, P.spawn - t * 0.012); }
+      spawnT -= dt;
+      if (spawnT <= 0) {
+        var li = engine.randInt(0, lanes - 1);
+        items.push({ l: li, y: -30, bad: engine.chance(P.badChance), r: P.itemR, rot: engine.rand(0, 6) });
+        // doubleDrop: a second lane fires at the same time, so you read two threats at once
+        if (P.m_doubleDrop && lanes > 2) {
+          var l2 = (li + 1 + engine.randInt(0, lanes - 2)) % lanes;
+          items.push({ l: l2, y: -30 - P.itemR * 2, bad: engine.chance(P.badChance), r: P.itemR, rot: engine.rand(0, 6) });
+        }
+        spawnT = Math.max(0.3, P.spawn - t * 0.012);
+      }
       var sp = P.fall + t * P.ramp;
+      // speedPulse: the road surges and eases instead of falling at a steady rate
+      if (P.m_speedPulse) sp *= 1 + Math.sin(t * 1.6) * 0.42;
       for (var i = items.length - 1; i >= 0; i--) {
         var it = items[i]; it.y += sp * dt; it.rot += dt * 3;
         if (it.y > H + 30) { if (it.bad) engine.addScore(1); items.splice(i, 1); continue; }
@@ -146,17 +173,19 @@ function buildLane(engine, P) {
 
 function buildPaddle(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
-  var paddle, ball, bricks, t, wave, serveT;
+  var paddle, ball, bricks, t, wave, serveT, wallDx;
   function makeBricks() {
     bricks = []; wave++; var cols = P.cols, rows = Math.min(P.rowsMax, 2 + wave), gap = 6, bw = (W - gap * (cols + 1)) / cols, bh = P.bh;
     for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) bricks.push({ x: gap + c * (bw + gap), y: 44 + r * (bh + gap), w: bw, h: bh });
   }
-  function reset() { paddle = { x: W / 2, w: P.pw }; ball = { x: W / 2, y: H * 0.6, vx: P.bspeed * (engine.chance(0.5) ? 1 : -1), vy: -P.bspeed, r: P.br }; t = 0; wave = 0; serveT = P.serve; makeBricks(); }
+  function reset() { paddle = { x: W / 2, w: P.pw }; ball = { x: W / 2, y: H * 0.6, vx: P.bspeed * (engine.chance(0.5) ? 1 : -1), vy: -P.bspeed, r: P.br }; t = 0; wave = 0; serveT = P.serve; wallDx = 0; makeBricks(); }
   function over() { S.hit(); engine.shake(16); engine.particles.burst(ball.x, ball.y, { count: 30, color: P.hazard, speed: 200, life: 0.6, gravity: 120 }); engine.gameOver(); }
   return {
     setup: reset, reset: reset,
     update: function (dt) {
       t += dt;
+      // shrinkPaddle: the paddle erodes as you score, so it gets harder as you improve
+      paddle.w = P.m_shrinkPaddle ? Math.max(46, P.pw - engine.score * 0.7) : P.pw;
       if (input.pointer.down) paddle.x = input.pointer.x;
       var d = input.dir().x; if (d) paddle.x += d * P.pspeed * dt;
       paddle.x = engine.clamp(paddle.x, paddle.w / 2, W - paddle.w / 2);
@@ -168,6 +197,12 @@ function buildPaddle(engine, P) {
         if (serveT <= 0) { ball.vy = -Math.abs(P.bspeed); ball.vx = P.bspeed * (engine.chance(0.5) ? 0.6 : -0.6); S.jump(); }
         return;
       }
+      // movingWall: the whole brick wall slides, so the same shot never works twice
+      if (P.m_movingWall) {
+        var prev = wallDx; wallDx = Math.sin(t * 0.75) * 34;
+        var shift = wallDx - prev;
+        for (var mb = 0; mb < bricks.length; mb++) bricks[mb].x += shift;
+      }
       var speed = 1 + t * P.ramp;
       ball.x += ball.vx * dt * speed; ball.y += ball.vy * dt * speed;
       if (ball.x < ball.r) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
@@ -175,7 +210,9 @@ function buildPaddle(engine, P) {
       if (ball.y < ball.r) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); }
       var py = H - P.pmargin;
       if (ball.vy > 0 && ball.y + ball.r > py && ball.y < py + 18 && Math.abs(ball.x - paddle.x) < paddle.w / 2 + ball.r) {
-        ball.vy = -Math.abs(ball.vy); ball.vx = engine.clamp(ball.vx + (ball.x - paddle.x) / (paddle.w / 2) * P.bspeed * 0.6, -P.bspeed * 1.8, P.bspeed * 1.8); S.blip();
+        // fastAngles: edge hits fling the ball much wider, rewarding precise returns
+        var infl = P.m_fastAngles ? 1.15 : 0.6;
+        ball.vy = -Math.abs(ball.vy); ball.vx = engine.clamp(ball.vx + (ball.x - paddle.x) / (paddle.w / 2) * P.bspeed * infl, -P.bspeed * 1.8, P.bspeed * 1.8); S.blip();
       }
       if (ball.y - ball.r > H) return over();
       for (var i = bricks.length - 1; i >= 0; i--) {
@@ -204,13 +241,15 @@ function buildPaddle(engine, P) {
 
 function buildStacker(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
-  var stack, cur, dir, t, camY, dead;
+  var stack, cur, dir, t, camY, dead, gust;
   function spawnNext() { var prev = stack[stack.length - 1]; cur = { x: dir < 0 ? W - prev.w : 0, w: prev.w }; }
-  function reset() { var bw = P.startW; dir = 1; stack = [{ x: (W - bw) / 2, w: bw }]; spawnNext(); t = 0; camY = 0; dead = false; }
+  function reset() { var bw = P.startW; dir = 1; stack = [{ x: (W - bw) / 2, w: bw }]; spawnNext(); t = 0; camY = 0; dead = false; gust = 0; }
   function drop() {
     var prev = stack[stack.length - 1];
     var left = Math.max(cur.x, prev.x), right = Math.min(cur.x + cur.w, prev.x + prev.w), ov = right - left;
     if (ov <= 0) { S.hit(); engine.shake(18); dead = true; engine.gameOver(); return; }
+    // shrinkStep: every placement also shaves the block, so precision compounds
+    if (P.m_shrinkStep) ov = Math.max(14, ov - 4);
     stack.push({ x: left, w: ov }); engine.addScore(1); S.coin();
     engine.particles.burst((left + right) / 2, H - stack.length * P.bh + camY, { count: 12, color: P.accent, speed: 120, life: 0.4, gravity: 40 });
     dir = -dir; spawnNext();
@@ -222,7 +261,11 @@ function buildStacker(engine, P) {
       t += dt;
       if (input.pointer.justDown || input.justPressed("action") || input.justPressed("up")) return drop();
       var sp = P.speed + stack.length * P.rampPx;
+      // accelerate: the slider keeps gaining speed within a single block
+      if (P.m_accelerate) sp *= 1 + Math.min(1.1, t * 0.06);
       cur.x += dir * sp * dt;
+      // wind: a drifting crosswind nudges the block off your aim
+      if (P.m_wind) { gust += dt; cur.x += Math.sin(gust * 0.9) * 42 * dt; }
       if (cur.x < 0) { cur.x = 0; dir = 1; } if (cur.x + cur.w > W) { cur.x = W - cur.w; dir = -1; }
       var targetCam = Math.max(0, stack.length * P.bh - H * 0.5);
       camY += (targetCam - camY) * Math.min(1, dt * 4);
@@ -238,9 +281,9 @@ function buildStacker(engine, P) {
 
 function buildReflex(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
-  var targets, spawnT, t, misses;
-  function reset() { targets = []; spawnT = 0.3; t = 0; misses = 0; }
-  function spawn() { var r = P.tr; targets.push({ x: engine.rand(r + 12, W - r - 12), y: engine.rand(r + 12, H - r - 12), r: r, bad: engine.chance(P.badChance), life: P.life, age: 0, pop: 0 }); }
+  var targets, spawnT, t, misses, combo;
+  function reset() { targets = []; spawnT = 0.3; t = 0; misses = 0; combo = 0; }
+  function spawn() { var r = P.tr; targets.push({ x: engine.rand(r + 12, W - r - 12), y: engine.rand(r + 12, H - r - 12), r: r, bad: engine.chance(P.badChance), life: P.life, age: 0, pop: 0, vx: engine.rand(-40, 40), vy: engine.rand(-40, 40) }); }
   return {
     setup: reset, reset: reset,
     update: function (dt) {
@@ -249,24 +292,42 @@ function buildReflex(engine, P) {
       var tapped = input.pointer.justDown, tx = input.pointer.x, ty = input.pointer.y;
       for (var i = targets.length - 1; i >= 0; i--) {
         var g = targets[i]; g.age += dt; if (g.pop < 1) g.pop = Math.min(1, g.pop + dt * 6);
-        if (tapped && engine.dist(tx, ty, g.x, g.y) < g.r) {
+        // driftTargets: rings wander instead of sitting still, so you must lead them
+        if (P.m_driftTargets) {
+          g.x += g.vx * dt; g.y += g.vy * dt;
+          if (g.x < g.r || g.x > W - g.r) g.vx = -g.vx;
+          if (g.y < g.r || g.y > H - g.r) g.vy = -g.vy;
+          g.x = engine.clamp(g.x, g.r, W - g.r); g.y = engine.clamp(g.y, g.r, H - g.r);
+        }
+        // shrinkTargets: the ring closes as it ages, so late taps need real precision
+        var hit = P.m_shrinkTargets ? g.r * (1 - 0.55 * (g.age / g.life)) : g.r;
+        if (tapped && engine.dist(tx, ty, g.x, g.y) < hit) {
           tapped = false;
           if (g.bad) { S.hit(); engine.shake(16); engine.particles.burst(g.x, g.y, { count: 26, color: P.hazard, speed: 180, life: 0.5, gravity: 80 }); engine.gameOver(); return; }
-          engine.addScore(3); S.coin(); engine.particles.burst(g.x, g.y, { count: 14, color: P.accent, speed: 150, life: 0.5, gravity: 40 }); targets.splice(i, 1); continue;
+          // chains: consecutive hits without a miss escalate the payout
+          combo = P.m_chains ? combo + 1 : 1;
+          engine.addScore(P.m_chains ? Math.min(15, 3 + combo) : 3);
+          S.coin(); engine.particles.burst(g.x, g.y, { count: 14, color: P.accent, speed: 150, life: 0.5, gravity: 40 }); targets.splice(i, 1); continue;
         }
-        if (g.age >= g.life) { targets.splice(i, 1); if (!g.bad) { misses++; S.blip(); if (misses >= P.maxMiss) { engine.shake(14); engine.gameOver(); return; } } }
+        if (g.age >= g.life) { targets.splice(i, 1); if (!g.bad) { misses++; combo = 0; S.blip(); if (misses >= P.maxMiss) { engine.shake(14); engine.gameOver(); return; } } }
       }
     },
     render: function (ctx) {
       for (var i = 0; i < targets.length; i++) {
         var g = targets[i], c = g.bad ? P.hazard : P.accent, k = 1 - g.age / g.life;
+        var rr = P.m_shrinkTargets ? g.r * (1 - 0.55 * (g.age / g.life)) : g.r;
         ctx.save(); ctx.translate(g.x, g.y); ctx.scale(g.pop, g.pop); ctx.globalAlpha = 0.35 + 0.6 * k;
-        ctx.shadowColor = c; ctx.shadowBlur = 16; ctx.strokeStyle = c; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, g.r, 0, 6.283); ctx.stroke();
-        ctx.globalAlpha = 0.16; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(0, 0, g.r, 0, 6.283); ctx.fill();
-        if (g.bad) { ctx.globalAlpha = 0.9; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-g.r * 0.4, -g.r * 0.4); ctx.lineTo(g.r * 0.4, g.r * 0.4); ctx.moveTo(g.r * 0.4, -g.r * 0.4); ctx.lineTo(-g.r * 0.4, g.r * 0.4); ctx.stroke(); }
+        ctx.shadowColor = c; ctx.shadowBlur = 16; ctx.strokeStyle = c; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, rr, 0, 6.283); ctx.stroke();
+        ctx.globalAlpha = 0.16; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(0, 0, rr, 0, 6.283); ctx.fill();
+        if (g.bad) { ctx.globalAlpha = 0.9; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-rr * 0.4, -rr * 0.4); ctx.lineTo(rr * 0.4, rr * 0.4); ctx.moveTo(rr * 0.4, -rr * 0.4); ctx.lineTo(-rr * 0.4, rr * 0.4); ctx.stroke(); }
         ctx.restore();
       }
       ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+      if (P.m_chains && combo > 1) {
+        ctx.fillStyle = P.accent2; ctx.textAlign = "center";
+        ctx.font = "bold 16px system-ui, -apple-system, Segoe UI, sans-serif";
+        ctx.fillText("x" + combo, W / 2, 28);
+      }
       for (var m = 0; m < P.maxMiss; m++) { ctx.fillStyle = m < misses ? P.hazard : "rgba(255,255,255,.18)"; ctx.beginPath(); ctx.arc(16 + m * 18, H - 16, 6, 0, 6.283); ctx.fill(); }
     }
   };
@@ -301,7 +362,9 @@ function buildSorter(engine, P) {
       var target = bin(sel);
       for (var i = items.length - 1; i >= 0; i--) {
         var it = items[i];
-        it.x += ((target.x + target.w / 2) - it.x) * Math.min(1, dt * P.steer);
+        // conveyorDrift: the chute pushes sideways, so items resist your steering
+        var aim = target.x + target.w / 2 + (P.m_conveyorDrift ? Math.sin(t * 1.1) * 46 : 0);
+        it.x += (aim - it.x) * Math.min(1, dt * P.steer);
         it.y += speed * dt; it.rot += it.spin * dt;
         if (it.y >= binY + 8) {
           if (it.cat === sel) {
@@ -309,7 +372,9 @@ function buildSorter(engine, P) {
             engine.particles.burst(it.x, binY, { count: 16, color: P.cats[it.cat].c, speed: 170, life: 0.5, gravity: 120 });
             pops.push({ x: it.x, y: binY, life: 0.5, ok: 1 });
           } else {
-            strikes++; S.hit(); engine.shake(14);
+            // fragile: a missort costs two strikes instead of one
+            strikes += P.m_fragile ? 2 : 1;
+            S.hit(); engine.shake(14);
             engine.particles.burst(it.x, binY, { count: 20, color: P.hazard, speed: 190, life: 0.55, gravity: 140 });
             pops.push({ x: it.x, y: binY, life: 0.5, ok: 0 });
           }
@@ -318,7 +383,12 @@ function buildSorter(engine, P) {
         }
       }
       spawnT -= dt;
-      if (spawnT <= 0) { items.push({ x: W / 2, y: -34, cat: engine.randInt(0, P.cats.length - 1), rot: 0, spin: engine.rand(-1.5, 1.5) }); spawnT = Math.max(0.42, P.spawn - t * 0.012); }
+      if (spawnT <= 0) {
+        items.push({ x: W / 2, y: -34, cat: engine.randInt(0, P.cats.length - 1), rot: 0, spin: engine.rand(-1.5, 1.5) });
+        // bursts: items arrive in clumps rather than a steady trickle
+        if (P.m_bursts && engine.chance(0.45)) items.push({ x: W / 2, y: -34 - P.itemR * 2.6, cat: engine.randInt(0, P.cats.length - 1), rot: 0, spin: engine.rand(-1.5, 1.5) });
+        spawnT = Math.max(0.42, P.spawn - t * 0.012);
+      }
       for (var p = pops.length - 1; p >= 0; p--) { pops[p].life -= dt; if (pops[p].life <= 0) pops.splice(p, 1); }
     },
     render: function (ctx) {
@@ -382,7 +452,10 @@ function buildElevator(engine, P) {
   function addRider() {
     var f = engine.randInt(0, P.floors - 1), d = engine.randInt(0, P.floors - 1);
     if (d === f) d = (f + 1) % P.floors;
-    waiting.push({ f: f, dest: d, pat: P.patience, max: P.patience });
+    // express: some passengers are in a hurry and give you far less time
+    var exp = P.m_express && engine.chance(0.3);
+    var pat = P.patience * (exp ? 0.5 : 1) * (P.m_impatient ? 0.75 : 1);
+    waiting.push({ f: f, dest: d, pat: pat, max: pat, exp: exp });
   }
   return {
     setup: reset, reset: reset,
@@ -421,7 +494,12 @@ function buildElevator(engine, P) {
         if (waiting[i].pat <= 0) { S.hit(); engine.shake(16); engine.particles.burst(40, floorY(waiting[i].f), { count: 18, color: P.hazard, speed: 160, life: 0.6 }); S.over(); engine.gameOver(); return; }
       }
       spawnT -= dt;
-      if (spawnT <= 0 && waiting.length < P.maxWaiting) { addRider(); spawnT = Math.max(0.9, P.spawn - t * 0.02); }
+      if (spawnT <= 0 && waiting.length < P.maxWaiting) {
+        addRider();
+        // rushHour: arrivals come in waves, so the lobby floods and then eases
+        if (P.m_rushHour && Math.sin(t * 0.32) > 0.4 && waiting.length < P.maxWaiting) addRider();
+        spawnT = Math.max(0.9, P.spawn - t * 0.02);
+      }
     },
     render: function (ctx) {
       var shaftX = W / 2 - P.shaftW / 2;
@@ -482,7 +560,9 @@ function buildTraffic(engine, P) {
       if (switchLock > 0) switchLock -= dt;
       var toggle = input.justPressed("action") || input.pointer.justDown ||
         input.justPressed("left") || input.justPressed("right") || input.justPressed("up") || input.justPressed("down");
-      if (toggle && switchLock <= 0) { greenNS = !greenNS; S.tick(); switchLock = P.switchLock; }
+      // staggered: the lights need longer to change, so you must plan further ahead
+      var lock = P.m_staggered ? P.switchLock * 2.1 : P.switchLock;
+      if (toggle && switchLock <= 0) { greenNS = !greenNS; S.tick(); switchLock = lock; }
 
       var speed = P.carSpeed + t * P.ramp;
       for (var i = cars.length - 1; i >= 0; i--) {
@@ -509,7 +589,7 @@ function buildTraffic(engine, P) {
           if (c.dir === 0) c.y += speed * dt; else if (c.dir === 2) c.y -= speed * dt;
           else if (c.dir === 1) c.x -= speed * dt; else c.x += speed * dt;
           c.wait = 0;
-        } else { c.wait += dt; if (c.wait > P.patience) { S.hit(); engine.shake(16); S.over(); engine.gameOver(); return; } }
+        } else { c.wait += dt; if (c.wait > (c.emg ? P.patience * 0.45 : P.patience)) { S.hit(); engine.shake(16); S.over(); engine.gameOver(); return; } }
 
         if (c.x < -60 || c.x > W + 60 || c.y < -60 || c.y > H + 60) { cars.splice(i, 1); passed++; engine.addScore(5); continue; }
       }
@@ -529,12 +609,16 @@ function buildTraffic(engine, P) {
       spawnT -= dt;
       if (spawnT <= 0 && cars.length < P.maxCars) {
         var dir = engine.randInt(0, 3), c2 = { dir: dir, wait: 0, hue: engine.chance(0.5) ? P.accent : P.accent2 };
+        // emergency: an ambulance has almost no patience and must be waved through
+        if (P.m_emergency && engine.chance(0.16)) { c2.emg = 1; c2.hue = "#ffd166"; }
         if (dir === 0) { c2.x = cx - 16; c2.y = -40; } else if (dir === 2) { c2.x = cx + 16; c2.y = H + 40; }
         else if (dir === 1) { c2.x = W + 40; c2.y = cy - 16; } else { c2.x = -40; c2.y = cy + 16; }
         var tooClose = false;
         for (var k = 0; k < cars.length; k++) { if (cars[k].dir === dir && engine.dist(cars[k].x, cars[k].y, c2.x, c2.y) < 46) tooClose = true; }
         if (!tooClose) cars.push(c2);
-        spawnT = Math.max(0.42, P.spawn - t * 0.014);
+        // longQueues: traffic keeps arriving even while a queue is still clearing
+        var gap = P.m_longQueues ? P.spawn * 0.62 : P.spawn;
+        spawnT = Math.max(0.34, gap - t * 0.014);
       }
     },
     render: function (ctx) {
@@ -575,15 +659,20 @@ function buildTraffic(engine, P) {
 
 function buildBarista(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
-  var order, step, timeLeft, t, done, flash, cupFill;
+  var order, step, timeLeft, t, done, flash, cupFill, startTime;
   function btn(i) {
     var n = P.ing.length, bw = (W - 40) / n;
     return { x: 20 + i * bw + 4, y: H - 118, w: bw - 8, h: 92 };
   }
   function newOrder() {
-    var len = engine.randInt(P.minLen, P.maxLen), o = [];
+    // longOrders: tickets run longer, so you must hold more of the sequence in your head
+    var lo = P.m_longOrders ? P.minLen + 1 : P.minLen;
+    var hi = P.m_longOrders ? P.maxLen + 2 : P.maxLen;
+    var len = engine.randInt(lo, Math.max(lo, hi)), o = [];
     for (var i = 0; i < len; i++) o.push(engine.randInt(0, P.ing.length - 1));
-    order = o; step = 0; timeLeft = P.time + len * P.perItem; cupFill = 0;
+    // rushTimer: the clock is tighter across the board
+    var mult = P.m_rushTimer ? 0.7 : 1;
+    order = o; step = 0; timeLeft = (P.time + len * P.perItem) * mult; cupFill = 0; startTime = timeLeft;
   }
   function reset() { t = 0; done = 0; flash = 0; newOrder(); }
   return {
@@ -625,13 +714,18 @@ function buildBarista(engine, P) {
       ctx.fillText("ORDER #" + (done + 1), 38, 78);
       for (var i = 0; i < order.length; i++) {
         var g = P.ing[order[i]], bx = 40 + i * 46, by = 108, on = i < step;
+        // hiddenTicket: the ticket blanks out shortly after it appears — memorise it fast
+        var hidden = P.m_hiddenTicket && (startTime - timeLeft) > 1.6 && !on;
         ctx.save();
         ctx.globalAlpha = on ? 0.35 : 1; ctx.shadowColor = g.c; ctx.shadowBlur = on ? 0 : 12;
-        ctx.fillStyle = g.c; ctx.beginPath(); ctx.arc(bx, by, 15, 0, 6.283); ctx.fill();
+        ctx.fillStyle = hidden ? "rgba(255,255,255,.13)" : g.c;
+        if (hidden) ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.arc(bx, by, 15, 0, 6.283); ctx.fill();
         ctx.restore();
+        if (hidden) { ctx.fillStyle = "rgba(255,255,255,.5)"; ctx.textAlign = "center"; ctx.font = "bold 14px system-ui, -apple-system, Segoe UI, sans-serif"; ctx.fillText("?", bx, by + 5); }
         if (on) { ctx.strokeStyle = P.accent; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bx - 7, by); ctx.lineTo(bx - 2, by + 6); ctx.lineTo(bx + 8, by - 6); ctx.stroke(); }
       }
-      var frac = Math.max(0, Math.min(1, timeLeft / (P.time + order.length * P.perItem)));
+      var frac = Math.max(0, Math.min(1, timeLeft / (startTime || 1)));
       ctx.fillStyle = "rgba(255,255,255,.10)";
       ctx.beginPath(); ctx.rect(24, 168, W - 48, 8); ctx.fill();
       ctx.fillStyle = frac < 0.25 ? P.hazard : P.accent;
@@ -698,7 +792,8 @@ function buildGrill(engine, P) {
       if (tap >= 0 && slots[tap]) {
         var r2 = slotRect(tap), cx = r2.x + r2.w / 2, cy = r2.y + r2.h / 2, it = slots[tap];
         if (it.p >= 1) {
-          var bonus = Math.max(1, Math.round((1 - (it.p - 1) / P.window) * 10));
+          var win0 = P.m_tightWindow ? P.window * 0.55 : P.window;
+          var bonus = Math.max(1, Math.round((1 - (it.p - 1) / win0) * 10));
           engine.addScore(10 + bonus); S.coin();
           engine.particles.burst(cx, cy, { count: 16, color: P.accent, speed: 160, life: 0.5, gravity: -20 });
           pops.push({ x: cx, y: cy, life: 0.6, txt: "+" + (10 + bonus), ok: 1 });
@@ -709,8 +804,11 @@ function buildGrill(engine, P) {
       for (var j = 0; j < P.slots; j++) {
         var s = slots[j];
         if (!s) continue;
-        s.p += dt / P.cook;
-        if (s.p > 1 + P.window) {
+        // variableCook: each patty cooks at its own rate, so you cannot fall into a rhythm
+        s.p += dt / (P.cook * (s.rate || 1));
+        // tightWindow: the ready window is much narrower
+        var win = P.m_tightWindow ? P.window * 0.55 : P.window;
+        if (s.p > 1 + win) {
           var rr = slotRect(j);
           fail(rr.x + rr.w / 2, rr.y + rr.h / 2, "BURNT");
           slots[j] = null;
@@ -722,7 +820,16 @@ function buildGrill(engine, P) {
       if (spawnT <= 0) {
         var free = [];
         for (var k = 0; k < P.slots; k++) if (!slots[k]) free.push(k);
-        if (free.length) { slots[free[engine.randInt(0, free.length - 1)]] = { p: 0 }; S.blip(); }
+        if (free.length) {
+          slots[free[engine.randInt(0, free.length - 1)]] = { p: 0, rate: P.m_variableCook ? engine.rand(0.65, 1.45) : 1 };
+          S.blip();
+          // burstOrders: a second order can land at the same moment
+          if (P.m_burstOrders && free.length > 1 && engine.chance(0.5)) {
+            var f2 = [];
+            for (var k2 = 0; k2 < P.slots; k2++) if (!slots[k2]) f2.push(k2);
+            if (f2.length) slots[f2[engine.randInt(0, f2.length - 1)]] = { p: 0, rate: P.m_variableCook ? engine.rand(0.65, 1.45) : 1 };
+          }
+        }
         spawnT = Math.max(0.7, P.spawn - t * 0.02);
       }
       for (var q = pops.length - 1; q >= 0; q--) { pops[q].life -= dt; if (pops[q].life <= 0) pops.splice(q, 1); }
@@ -755,7 +862,8 @@ function buildGrill(engine, P) {
         ctx.strokeStyle = ready ? "#4ade80" : P.accent; ctx.lineWidth = 4;
         ctx.beginPath(); ctx.arc(0, 0, P.pattyR + 10, -1.5708, -1.5708 + 6.283 * raw); ctx.stroke();
         if (ready) {
-          var over = (s.p - 1) / P.window;
+          var winR = P.m_tightWindow ? P.window * 0.55 : P.window;
+          var over = (s.p - 1) / winR;
           ctx.strokeStyle = over > 0.6 ? P.hazard : "#ffb703"; ctx.lineWidth = 3;
           ctx.beginPath(); ctx.arc(0, 0, P.pattyR + 18, -1.5708, -1.5708 + 6.283 * (1 - over)); ctx.stroke();
         }
@@ -813,7 +921,14 @@ function buildFirewatch(engine, P) {
           for (var d = 0; d < 4; d++) {
             var nc = cc + dirs[d][0], nr = rr + dirs[d][1];
             if (nc < 0 || nc >= cols || nr < 0 || nr >= rows) continue;
-            if (cells[idx(nc, nr)] === 0 && engine.chance(P.catch)) born.push(idx(nc, nr));
+            // wind: the fire runs much faster downwind than against it
+            var ch = P.catch;
+            if (P.m_wind) ch *= dirs[d][0] === 1 ? 2.1 : (dirs[d][0] === -1 ? 0.35 : 1);
+            // dryPatches: some ground catches far more readily than the rest
+            if (P.m_dryPatches && ((nc * 7 + nr * 13) % 5 === 0)) ch *= 2.2;
+            if (cells[idx(nc, nr)] === 0 && engine.chance(ch)) born.push(idx(nc, nr));
+            // reignite: doused ground can catch again, so nothing stays safe
+            else if (P.m_reignite && cells[idx(nc, nr)] === 2 && engine.chance(ch * 0.35)) born.push(idx(nc, nr));
           }
         }
         for (var b = 0; b < born.length; b++) cells[born[b]] = 1;
@@ -857,7 +972,10 @@ function buildPowerGrid(engine, P) {
   var W = engine.width, H = engine.height, input = engine.input, S = engine.sound;
   var supply, demand, phase, stability, t, hist, surgeT;
   function demandAt(ph) {
-    return engine.clamp(0.5 + Math.sin(ph * P.w1) * 0.22 + Math.sin(ph * P.w2 + 1.3) * 0.14, 0.06, 0.94);
+    var base = 0.5 + Math.sin(ph * P.w1) * 0.22 + Math.sin(ph * P.w2 + 1.3) * 0.14;
+    // noise: demand is jittery rather than smooth, so you chase a restless line
+    if (P.m_noise) base += Math.sin(ph * 7.3) * 0.045 + Math.sin(ph * 11.7) * 0.03;
+    return engine.clamp(base, 0.06, 0.94);
   }
   function reset() {
     phase = 0; stability = 1; t = 0; surgeT = 3;
@@ -873,12 +991,20 @@ function buildPowerGrid(engine, P) {
       // demand drifts on layered sine waves, with occasional surges
       demand = demandAt(phase);
       surgeT -= dt;
-      if (surgeT <= 0) { surgeT = engine.rand(3.5, 7); demand += engine.chance(0.5) ? 0.16 : -0.16; S.tick(); }
+      if (surgeT <= 0) {
+        // spikes: surges are bigger and arrive more often
+        var mag = P.m_spikes ? 0.27 : 0.16;
+        surgeT = P.m_spikes ? engine.rand(2.2, 4.5) : engine.rand(3.5, 7);
+        demand += engine.chance(0.5) ? mag : -mag; S.tick();
+      }
       demand = engine.clamp(demand, 0.06, 0.94);
 
       var d = input.dir();
-      if (d.y) supply -= d.y * P.rate * dt;
-      if (input.pointer.down) supply += ((1 - (input.pointer.y / H)) - supply) * Math.min(1, dt * P.follow);
+      // inertia: the generator responds slowly, so you must anticipate rather than react
+      var rate = P.m_inertia ? P.rate * 0.45 : P.rate;
+      var follow = P.m_inertia ? P.follow * 0.35 : P.follow;
+      if (d.y) supply -= d.y * rate * dt;
+      if (input.pointer.down) supply += ((1 - (input.pointer.y / H)) - supply) * Math.min(1, dt * follow);
       supply = engine.clamp(supply, 0, 1);
 
       var err = Math.abs(supply - demand);
@@ -944,6 +1070,45 @@ function buildPowerGrid(engine, P) {
       ctx.fillText(inBand ? "BALANCED" : "OUT OF BAND", W - 22, H - 50);
     }
   };
+}
+
+// ---------- rule modifiers ----------
+// Two games of the same archetype otherwise ship a byte-identical algorithm and differ only
+// in constants, which is why a repeat feels like the same game. Each archetype declares a few
+// independent RULE toggles that change how it actually plays; the generator activates a
+// seeded subset and the builder honours them via P.m_<name>. A different mod set therefore
+// means a genuinely different game, not just different numbers.
+const MODS = {
+  avoider:   ["orbit", "shrink", "magnet"],
+  flapper:   ["movingGaps", "narrowing", "drift"],
+  lane:      ["shiftLanes", "doubleDrop", "speedPulse"],
+  paddle:    ["movingWall", "shrinkPaddle", "fastAngles"],
+  stacker:   ["wind", "accelerate", "shrinkStep"],
+  reflex:    ["shrinkTargets", "driftTargets", "chains"],
+  sorter:    ["bursts", "conveyorDrift", "fragile"],
+  elevator:  ["express", "impatient", "rushHour"],
+  traffic:   ["emergency", "staggered", "longQueues"],
+  barista:   ["hiddenTicket", "longOrders", "rushTimer"],
+  grill:     ["variableCook", "burstOrders", "tightWindow"],
+  firewatch: ["wind", "reignite", "dryPatches"],
+  powergrid: ["noise", "inertia", "spikes"]
+};
+
+// Choose which rules are active. Prefers a combination this archetype has not used recently,
+// so consecutive appearances differ structurally rather than only numerically.
+function pickMods(key, rng, recentSigs) {
+  const all = MODS[key] || [];
+  if (!all.length) return [];
+  const combos = [];
+  // every subset of size 1..2 keeps each game readable rather than a pile of rules at once
+  for (let i = 0; i < all.length; i++) {
+    combos.push([all[i]]);
+    for (let j = i + 1; j < all.length; j++) combos.push([all[i], all[j]]);
+  }
+  combos.push([]);
+  const shuffledCombos = shuffled(combos, rng);
+  const fresh = shuffledCombos.find((c) => !recentSigs.has(c.slice().sort().join("+") || "(none)"));
+  return (fresh || shuffledCombos[0]).slice().sort();
 }
 
 // ---------- variation ----------
@@ -1178,6 +1343,16 @@ export function generateGameProc(brief, variant = 0) {
   const fast = { playful: 0.2, cheerful: 0.2, meditative: 0, satisfying: 0.3, mysterious: 0.2, hypnotic: 0.3, tense: 0.6, frantic: 0.9 }[brief.mood] ?? 0.3;
   const P = jitterParams(a.key, a.params({ pal, rng, fast }), rng);
 
+  // Activate a rule set this archetype has not used recently, so a repeat plays differently
+  // rather than being the same game with different constants.
+  const recentSigs = new Set(
+    avoid.filter((g) => norm(g.mechanic) === norm(a.mechanic))
+      .map((g) => (Array.isArray(g.mods) && g.mods.length ? g.mods.slice().sort().join("+") : "(none)"))
+  );
+  const mods = pickMods(a.key, rng, recentSigs);
+  P.mods = mods;
+  for (const m of mods) P["m_" + m] = 1;
+
   // Titles must not collide with anything already in the gallery.
   const usedTitles = new Set(avoid.map((g) => norm(g.title)));
   const themeWords = String(brief.theme || "neon").split(/[^A-Za-z]+/).filter(Boolean).map(titleCase);
@@ -1205,10 +1380,11 @@ export function generateGameProc(brief, variant = 0) {
     accent: pal.accent, accent2: pal.accent2, bg: pal.bg,
     width: d.w, height: d.h,
     genre: a.genre, mechanic: a.mechanic, theme: brief.theme || "neon",
+    mods,
     tags: [a.genre, a.key, "arcade", (brief.mood || "fun")].filter(Boolean).slice(0, 5),
     emoji: a.emoji
   };
-  return { code: emit(meta, P, a.build), meta, archetype: a.key };
+  return { code: emit(meta, P, a.build), meta, archetype: a.key, mods };
 }
 
 export const ARCHETYPE_KEYS = ARCH.map((a) => a.key);

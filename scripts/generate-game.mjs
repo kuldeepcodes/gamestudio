@@ -15,6 +15,7 @@ import { buildBrief } from "./lib/ideas.mjs";
 import { generateGame, repairGame } from "./lib/llm.mjs";
 import { generateGameProc } from "./lib/procgen.mjs";
 import { readManifest, writeManifest, uniqueSlug, entryFromMeta } from "./lib/manifest.mjs";
+import { checkDuplicate } from "./lib/fingerprint.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -105,11 +106,48 @@ async function main() {
 
   // 2) Procedural generator — the reliable default / fallback.
   if (!ok) {
-    for (let v = 0; v <= MAX_REPAIRS + 3; v++) {
+    // Load every shipped game's source once so each candidate can be scored against them.
+    const shippedCode = [];
+    for (const g of known) {
+      const p = path.join(ROOT, "games", g.slug || "", "game.js");
+      if (g.slug && fs.existsSync(p)) shippedCode.push({ slug: g.slug, title: g.title, code: fs.readFileSync(p, "utf8") });
+    }
+
+    let best = null;   // most-distinct candidate seen, used if nothing clears the bar
+    const TOTAL = MAX_REPAIRS + 8;
+    for (let v = 0; v <= TOTAL; v++) {
       const gen = generateGameProc(brief, v);
+
+      // A repeated archetype ships a byte-identical algorithm and differs only in constants,
+      // so check the candidate is actually distinct before spending a smoke test on it.
+      const dup = checkDuplicate(gen.code, shippedCode);
+      if (dup.tooSimilar) {
+        if (!best || dup.score < best.score) best = { gen, score: dup.score, closest: dup.closest };
+        log(`Variant ${v} (${gen.archetype}) is ${(dup.score * 100).toFixed(0)}% similar to "${dup.closest.title}" — rejecting, trying another`);
+        continue;
+      }
+
       const r = await tryCode(gen.code);
-      if (r.ok) { ok = true; meta = r.meta; source = "procedural"; log(`Procedural game "${meta.title}" (${gen.archetype}) passed on variant ${v}`); break; }
+      if (r.ok) {
+        ok = true; meta = r.meta; source = "procedural";
+        const note = dup.closest && dup.score > 0
+          ? ` (closest existing game: "${dup.closest.title}" at ${(dup.score * 100).toFixed(0)}% similarity)`
+          : " (no existing game shares its algorithm)";
+        log(`Procedural game "${meta.title}" (${gen.archetype}) passed on variant ${v}${note}`);
+        log(`Rules active: ${(gen.mods || []).join(", ") || "(base rules)"}`);
+        break;
+      }
       errors = r.errors; log(`Procedural variant ${v} (${gen.archetype}) failed: ${errors.slice(0, 2).join(" | ")}`);
+    }
+
+    // Every variant was a near-duplicate — the archetype x rule-set space is exhausted.
+    // Ship the MOST DISTINCT candidate seen rather than skipping the drop, and say so.
+    if (!ok && best) {
+      const r = await tryCode(best.gen.code);
+      if (r.ok) {
+        ok = true; meta = r.meta; source = "procedural";
+        log(`WARNING: no sufficiently distinct variant found. Shipping the most distinct one, "${meta.title}", still ${(best.score * 100).toFixed(0)}% similar to "${best.closest.title}". Consider adding an archetype or more rule modifiers.`);
+      }
     }
   }
 

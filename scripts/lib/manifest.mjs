@@ -35,6 +35,7 @@ export function entryFromMeta(meta, slug, dateStr) {
     tagline: meta.tagline || "",
     description: meta.description || meta.tagline || "",
     genre: meta.genre || "", mechanic: meta.mechanic || "", theme: meta.theme || "",
+    mods: Array.isArray(meta.mods) ? meta.mods.slice() : [],
     tags: Array.isArray(meta.tags) ? meta.tags.slice(0, 6) : [],
     accent: meta.accent || "#6ee7ff", accent2: meta.accent2 || "#a78bfa", bg: meta.bg || "#070b1a",
     emoji: meta.emoji || "\uD83C\uDFAE",

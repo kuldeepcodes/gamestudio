@@ -7,6 +7,7 @@
     "build": "node build-game.mjs",
     "rebuild": "node rebuild-all.mjs",
     "smoke": "node lib/smoke.mjs",
+    "duplicates": "node check-duplicates.mjs",
     "generate": "node generate-game.mjs"
   },
   "dependencies": {

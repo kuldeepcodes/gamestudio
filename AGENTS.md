@@ -78,7 +78,15 @@ must be static data + a `create()` function only. Do all game logic inside `crea
 3. Build it (`build-game.mjs`) → **smoke-test** it headlessly (`scripts/lib/smoke.mjs`).
 4. If it errors, try another variant (procedural) or ask the model to **repair** it (LLM). Only a
    clean game ships.
-5. Register it in `games.json`, write `meta.json`, and the workflow **commits straight to `main`**.
+5. Check it is not a near-duplicate (`scripts/lib/fingerprint.mjs`). An archetype's builder is
+   stringified into `game.js`, so a repeat ships a byte-identical algorithm and differs only in
+   constants; a candidate scoring >= 0.62 against any existing game is rejected and another
+   variant generated. Audit anytime with `node scripts/check-duplicates.mjs`.
+6. Register it in `games.json`, write `meta.json`, and the workflow **commits straight to `main`**.
+
+When adding an archetype, give it entries in `MODS` (rule toggles that change how it plays) and
+`JITTER` (safe numeric ranges) in `scripts/lib/procgen.mjs`, and honour each rule in the builder
+via `P.m_<name>`. Without rule modifiers a repeated archetype is the same game with new numbers.
 
 Publishing is automatic: GitHub Pages redeploys on every push to `main`, so the game appears on the
 gallery homepage about a minute later. There is no review step — **the smoke test is the gate**, so

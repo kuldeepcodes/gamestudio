@@ -49,14 +49,41 @@ The pool spans two flavours:
 1. *Strict least-recently-used archetype rotation* — each archetype is ranked by how long since it
    last shipped and the most overdue one wins, so all 13 cycle before any repeats. At the default
    4-hourly cadence that is **~52 hours between repeats of a mechanic**.
-2. *Collision-free naming* — titles are checked against the entire gallery before use, and taglines
+2. *Rule modifiers* — each archetype has a set of optional rules that change how it **plays**, not
+   just how fast it runs: the fire spreads downwind, the lift gets express passengers, the brick
+   wall slides, targets shrink as they age, the grid responds sluggishly. A seeded subset is
+   activated per drop, avoiding sets that archetype used recently.
+3. *Duplicate detection* — see below.
+4. *Collision-free naming* — titles are checked against the entire gallery before use, and taglines
    avoid the last six used.
-3. *Per-archetype parameter jitter* — speeds, sizes and layouts are re-rolled within safe bounds, so
-   even two games of the same archetype play differently.
+5. *Per-archetype parameter jitter* — speeds, sizes and layouts are re-rolled within safe bounds.
+
+### Duplicate detection
+
+An archetype's builder is serialised into `game.js` with `Function.prototype.toString()`, so two
+games of the same archetype ship a **byte-identical algorithm** — measured at 66–75% of the file —
+and differ only in constants. Different numbers alone do not make a different game.
+
+So every candidate is fingerprinted (algorithm hash + active rules + gameplay params, ignoring
+colours) and scored against every game already shipped. Anything at or above **0.62 similarity** is
+rejected and another variant is generated. The threshold was calibrated against two real
+duplicates that scored 0.706 and 0.654 — both recognisably the same game.
+
+Audit the gallery at any time:
+
+```bash
+node scripts/check-duplicates.mjs        # exits non-zero if any pair is too similar
+node scripts/check-duplicates.mjs 0.5    # stricter
+```
+
+Simulated over 48 consecutive drops this yields **48 distinct algorithm+rule combinations with no
+pair above the threshold**. The space is finite (13 archetypes × ~7 rule sets ≈ 91), so after
+roughly 15 days of 4-hourly drops it is exhausted; the generator then ships the *most distinct*
+candidate it found and logs a warning suggesting a new archetype.
 
 **Nothing is ever deleted.** Once every archetype is represented the gallery keeps growing, so a
-mechanic does eventually appear twice — separated by ~52 hours and differing in tuning, theme,
-palette and name. If you would rather cap it, set `GS_MAX_PER_MECHANIC` (e.g. `"1"`) in the
+mechanic does eventually appear twice — separated by ~52 hours and differing in rules, tuning,
+theme, palette and name. If you would rather cap it, set `GS_MAX_PER_MECHANIC` (e.g. `"1"`) in the
 workflow's `env:`; be aware that **deletes** older games of that mechanic, and since drops now land
 on `main` without review there is no pull request in which to notice it.
 
